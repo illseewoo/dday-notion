@@ -8,6 +8,8 @@
   <!-- Notion 느낌의 폰트 (Pretendard & Inter) -->
   <link rel="stylesheet" as="style" crossorigin
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
   <style>
     /* ============================================================
        [기본 스타일 & 테마 토큰] 노션 특유의 미니멀 모노톤 테마
@@ -69,51 +71,131 @@
       gap: 16px;
     }
 
-    /* 상단 탭 네비게이션 (오른쪽 정렬 미니멀 아이콘 토글) */
+    /* Tabler Icons 수평 및 수직 중심 정렬 보정 */
+    .ti {
+      display: inline-block;
+      vertical-align: -0.06em;
+      line-height: 1;
+    }
+
+    /* 상단 네비게이션: 공간을 차지하지 않는 슬림 더보기(점 3개) 버튼 */
     .tab-bar-wrap {
       display: flex;
       justify-content: flex-end;
       width: 100%;
-      margin-bottom: -4px;
+      position: relative;
+      margin-bottom: -10px;
+      height: 22px;
+      z-index: 200;
     }
 
-    .tab-bar {
-      display: inline-flex;
-      background-color: var(--bg-subtle);
-      padding: 3px;
-      border-radius: var(--radius);
-      border: 1px solid var(--border-color);
-      gap: 3px;
-      user-select: none;
-    }
-
-    .tab-btn {
+    .more-menu-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 28px;
+      width: 28px;
+      height: 22px;
       padding: 0;
-      font-size: 0.9em;
-      border: none;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
       background: transparent;
       color: var(--text-muted);
-      border-radius: calc(var(--radius) - 2px);
       cursor: pointer;
+      font-size: 16px;
       transition: all 0.15s ease;
-      font-family: inherit;
+      line-height: 1;
     }
 
-    .tab-btn:hover {
+    .more-menu-btn:hover,
+    .more-menu-btn.active {
+      background-color: var(--bg-hover);
       color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    /* 더보기 터치 시 그 위로 뜨는 조그마한 팝업 모달 */
+    .nav-modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1040;
+      background: transparent;
+    }
+
+    .nav-modal-backdrop.show {
+      display: block;
+    }
+
+    .nav-modal {
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      width: 145px;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 16px rgba(15, 15, 15, 0.12), 0 1px 3px rgba(15, 15, 15, 0.08);
+      padding: 4px;
+      z-index: 1050;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      animation: fadeIn 0.15s ease;
+    }
+
+    .nav-modal.show {
+      display: flex;
+    }
+
+    .nav-modal-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 7px 10px;
+      font-size: 0.85em;
+      font-weight: 500;
+      color: var(--text-main);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: background-color 0.12s ease;
+    }
+
+    .nav-modal-item .ti {
+      font-size: 1.15em;
+      color: var(--text-muted);
+    }
+
+    .nav-modal-item:hover {
       background-color: var(--bg-hover);
     }
 
-    .tab-btn.active {
-      background-color: var(--bg-card);
-      color: var(--text-main);
+    .nav-modal-item.active {
+      background-color: var(--bg-subtle);
       font-weight: 600;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      color: var(--primary);
+    }
+
+    .nav-modal-item.active .ti {
+      color: var(--primary);
+    }
+
+    .nav-modal-item .nav-check {
+      margin-left: auto;
+      font-size: 0.9em;
+      color: var(--primary);
+      opacity: 0;
+    }
+
+    .nav-modal-item.active .nav-check {
+      opacity: 1;
     }
 
     .tab-view {
@@ -301,6 +383,12 @@
       padding-bottom: 8px;
     }
 
+    .section-title span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .section-desc {
       font-size: 0.8em;
       color: var(--text-muted);
@@ -397,6 +485,10 @@
 
     .preset-btn {
       flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
       padding: 6px 4px;
       font-size: 0.78em;
       font-weight: 500;
@@ -642,6 +734,12 @@
       flex-wrap: wrap;
     }
 
+    .manage-item-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .manage-item-actions {
       display: flex;
       align-items: center;
@@ -791,6 +889,9 @@
     }
 
     .url-reset-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       color: var(--text-muted);
       text-decoration: underline;
       cursor: pointer;
@@ -906,21 +1007,34 @@
 
   <!-- 위젯 모드(?hideTabs=1) 전용 탈출/설정 바로가기 버튼 -->
   <button type="button" id="floating-settings-btn" class="floating-settings-btn" onclick="openSettingsFromWidget()"
-    title="⚙️ 설정 열기">
-    ⚙️
+    title="환경 설정 열기">
+    <i class="ti ti-settings"></i>
   </button>
 
   <div class="container">
-    <!-- 상단 탭 스위처 (우측 정렬 미니멀 아이콘 토글) -->
+    <!-- 상단 네비게이션 (초슬림 더보기 점 3개 버튼 & 팝업 모달) -->
     <div class="tab-bar-wrap">
-      <nav class="tab-bar" aria-label="화면 전환">
-        <button class="tab-btn active" id="tab-btn-dday" onclick="switchTab('dday')" title="디데이 목록">
-          <span>📅</span>
+      <button type="button" class="more-menu-btn" id="more-menu-btn" onclick="toggleNavModal(event)"
+        title="더보기 (화면 전환)">
+        <i class="ti ti-dots"></i>
+      </button>
+
+      <!-- 모달 바깥 터치/클릭 시 닫기 위한 백드롭 -->
+      <div class="nav-modal-backdrop" id="nav-modal-backdrop" onclick="closeNavModal()"></div>
+
+      <!-- 상단 더보기 팝업 모달 -->
+      <div class="nav-modal" id="nav-modal">
+        <button type="button" class="nav-modal-item active" id="nav-item-dday" onclick="selectNavTab('dday')">
+          <i class="ti ti-calendar"></i>
+          <span>디데이 목록</span>
+          <i class="ti ti-check nav-check" id="nav-check-dday"></i>
         </button>
-        <button class="tab-btn" id="tab-btn-settings" onclick="switchTab('settings')" title="설정">
-          <span>⚙️</span>
+        <button type="button" class="nav-modal-item" id="nav-item-settings" onclick="selectNavTab('settings')">
+          <i class="ti ti-settings"></i>
+          <span>환경 설정</span>
+          <i class="ti ti-check nav-check" id="nav-check-settings"></i>
         </button>
-      </nav>
+      </div>
     </div>
 
     <!-- [탭 1] 디데이 목록 화면 -->
@@ -941,7 +1055,7 @@
       <!-- 1. 글꼴 크기 & 헤더 표시 설정 -->
       <div class="settings-section">
         <div class="section-title">
-          <span>🎨 화면 및 글꼴 설정</span>
+          <span><i class="ti ti-palette"></i> 화면 및 글꼴 설정</span>
         </div>
 
         <!-- 글꼴 크기 조절 (프리셋 & 슬라이더) -->
@@ -1014,18 +1128,20 @@
       <!-- URL 파라미터 분기 모드 알림 배너 (노션 임베드 링크 생성기 바로 위) -->
       <div id="url-param-banner" class="url-param-banner" style="display: none;">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span class="url-param-badge" id="url-param-badge-text">⚡ URL 분기 모드</span>
+          <span class="url-param-badge" id="url-param-badge-text"><i class="ti ti-bolt"></i> URL 분기 모드</span>
           <button type="button" class="btn btn-primary btn-sm" onclick="saveCurrentUrlItemsToLocal()"
-            style="font-size:0.78em; padding:4px 10px; font-weight:600;" title="현재 화면에 보이는 디데이들을 이 기기 로컬에 기본 목록으로 저장">💾 이 기기에 저장</button>
+            style="font-size:0.78em; padding:4px 10px; font-weight:600;" title="현재 화면에 보이는 디데이들을 이 기기 로컬에 기본 목록으로 저장"><i
+              class="ti ti-device-floppy"></i> 이 기기에 저장</button>
         </div>
         <button type="button" class="url-reset-link" onclick="resetToLocalList()"
-          style="background:none; border:none; padding:0; cursor:pointer;" title="기본 저장 목록으로 돌아가기">기본 목록 (초기화)</button>
+          style="background:none; border:none; padding:0; cursor:pointer;" title="기본 저장 목록으로 돌아가기"><i
+            class="ti ti-arrow-back-up"></i> 기본 목록 (초기화)</button>
       </div>
 
       <!-- 2. 노션 임베드 링크 생성기 (URL 파라미터 분기) -->
       <div class="settings-section">
         <div class="section-title">
-          <span>🔗 노션 임베드 링크 생성기 (기기 간 공유 & 분기)</span>
+          <span><i class="ti ti-link"></i> 노션 임베드 링크 생성기 (기기 간 공유 & 분기)</span>
         </div>
         <p class="section-desc">
           서로 다른 기기나 노션 임베드에서도 코드 수정 없이 똑같은 디데이를 볼 수 있는 GitHub Pages 배포 URL을 생성합니다.
@@ -1035,11 +1151,14 @@
         <div class="form-group">
           <label class="form-label">분기 방식 선택</label>
           <div class="preset-group">
-            <button type="button" class="preset-btn active" id="gen-type-current" onclick="setGenType('current')">📌 현재
-              내 디데이</button>
-            <button type="button" class="preset-btn" id="gen-type-preset" onclick="setGenType('preset')">사전 프리셋</button>
-            <button type="button" class="preset-btn" id="gen-type-badge" onclick="setGenType('badge')">배지 필터</button>
-            <button type="button" class="preset-btn" id="gen-type-custom" onclick="setGenType('custom')">직접 작성</button>
+            <button type="button" class="preset-btn active" id="gen-type-current" onclick="setGenType('current')"><i
+                class="ti ti-pin"></i> 현재 내 디데이</button>
+            <button type="button" class="preset-btn" id="gen-type-preset" onclick="setGenType('preset')"><i
+                class="ti ti-layout-grid"></i> 사전 프리셋</button>
+            <button type="button" class="preset-btn" id="gen-type-badge" onclick="setGenType('badge')"><i
+                class="ti ti-tag"></i> 배지 필터</button>
+            <button type="button" class="preset-btn" id="gen-type-custom" onclick="setGenType('custom')"><i
+                class="ti ti-pencil"></i> 직접 작성</button>
           </div>
         </div>
 
@@ -1047,7 +1166,8 @@
         <div class="form-group" id="gen-area-current">
           <p class="section-desc"
             style="margin: 0; padding: 10px 12px; background-color: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            ✨ <b>현재 내 디데이 전체를 URL로 인코딩</b>합니다. 이 URL을 노션에 임베드하거나 다른 기기 주소창에 넣으면 코드 변경 없이도 동일한 디데이가 즉시 동기화되어 나타납니다.
+            <i class="ti ti-sparkles" style="color: var(--primary);"></i> <b>현재 내 디데이 전체를 URL로 인코딩</b>합니다. 이 URL을 노션에
+            임베드하거나 다른 기기 주소창에 넣으면 코드 변경 없이도 동일한 디데이가 즉시 동기화되어 나타납니다.
           </p>
         </div>
 
@@ -1089,7 +1209,8 @@
             <span class="setting-label">상단 탭 바 숨김 (위젯 전용 모드)</span>
             <span class="setting-subtext" style="line-height: 1.45;">
               노션 임베드 시 상단 탭(디데이 / 설정)을 숨겨 깔끔한 위젯으로 표시합니다.<br />
-              <span style="color: var(--danger); font-weight: 500;">⚠️ 이 토글을 적용하여 상단 탭을 비활성화(숨김)하면 설정 화면이 사라져 디데이를 변경할 수 없습니다.</span>
+              <span style="color: var(--danger); font-weight: 500;">⚠️ 이 토글을 적용하여 상단 탭을 비활성화(숨김)하면 설정 화면이 사라져 디데이를 변경할 수
+                없습니다.</span>
             </span>
           </div>
           <label class="switch" style="margin-top: 2px;">
@@ -1104,10 +1225,11 @@
           <label class="form-label">생성된 노션 임베드 URL</label>
           <div class="url-preview-box">
             <input type="text" id="gen-result-url" class="url-preview-input" readonly />
-            <button type="button" class="btn btn-primary btn-sm" onclick="copyGeneratedUrl()"
-              style="flex-shrink:0;">복사</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="copyGeneratedUrl()" style="flex-shrink:0;"><i
+                class="ti ti-copy"></i> 복사</button>
             <a id="gen-test-link" href="#" target="_blank" class="btn btn-secondary btn-sm"
-              style="flex-shrink:0; text-decoration:none; display:inline-flex; align-items:center;">열기 ↗</a>
+              style="flex-shrink:0; text-decoration:none; display:inline-flex; align-items:center; gap:4px;"><i
+                class="ti ti-external-link"></i> 열기</a>
           </div>
         </div>
       </div>
@@ -1115,7 +1237,7 @@
       <!-- 3. 새로운 디데이 만들기 -->
       <div class="settings-section">
         <div class="section-title">
-          <span>➕ 새로운 디데이 만들기</span>
+          <span><i class="ti ti-plus"></i> 새로운 디데이 만들기</span>
         </div>
         <p class="section-desc">목표 날짜와 계산 옵션을 설정하여 새로운 디데이를 추가하세요.</p>
 
@@ -1177,8 +1299,9 @@
             </div>
           </div>
 
-          <button type="submit" class="btn btn-primary" style="margin-top: 4px;">
-            <span>＋</span> 새 디데이 추가하기
+          <button type="submit" class="btn btn-primary"
+            style="margin-top: 4px; display:inline-flex; align-items:center; justify-content:center; gap:6px;">
+            <i class="ti ti-plus"></i> 새 디데이 추가하기
           </button>
         </form>
       </div>
@@ -1186,7 +1309,7 @@
       <!-- 4. 각 디데이별 계산 방식 (+0/+1) 및 목록 관리 -->
       <div class="settings-section">
         <div class="section-title">
-          <span>📋 등록된 디데이 관리 (+0 / +1 토글)</span>
+          <span><i class="ti ti-list-check"></i> 등록된 디데이 관리</span>
         </div>
         <p class="section-desc">각 디데이별로 <b>+0</b>(경과일) 또는 <b>+1</b>(1일차 시작) 계산 방식을 즉시 변경할 수 있습니다.</p>
 
@@ -1196,7 +1319,7 @@
       <!-- 5. 배지 관리 -->
       <div class="settings-section">
         <div class="section-title">
-          <span>🏷️ 배지 관리</span>
+          <span><i class="ti ti-tags"></i> 배지 관리</span>
         </div>
         <p class="section-desc">노션 테마 색상으로 디데이에 부착할 배지를 만들고 관리하세요.</p>
 
@@ -1204,8 +1327,9 @@
         <div style="display:flex; flex-direction:column; gap:10px;">
           <div style="display:flex; gap:8px;">
             <input type="text" id="new-badge-name" class="input-text" placeholder="새 배지 이름 (예: 데드라인, 생일)" />
-            <button type="button" class="btn btn-primary btn-sm" onclick="handleAddBadge()" style="flex-shrink:0;">
-              배지 추가
+            <button type="button" class="btn btn-primary btn-sm" onclick="handleAddBadge()"
+              style="flex-shrink:0; display:inline-flex; align-items:center; gap:4px;">
+              <i class="ti ti-plus"></i> 배지 추가
             </button>
           </div>
           <div>
@@ -1227,7 +1351,8 @@
             <span class="setting-label" style="color: var(--danger);">기본 설정으로 초기화</span>
             <span class="setting-subtext">모든 디데이와 설정을 초기 예시 상태로 되돌립니다.</span>
           </div>
-          <button type="button" class="btn btn-danger btn-sm" onclick="handleResetDefaults()">초기화</button>
+          <button type="button" class="btn btn-danger btn-sm" onclick="handleResetDefaults()"
+            style="display:inline-flex; align-items:center; gap:4px;"><i class="ti ti-rotate"></i> 초기화</button>
         </div>
       </div>
 
@@ -1257,15 +1382,12 @@
       fontSizeScale: 1.0,
       showHeaderArea: true,
       showHeaderTitle: true,
-      headerTitle: "목표 & 기념일",
+      headerTitle: "",
       showTodayDate: true,
       badges: [
-        { id: "b_proj", name: "좌충우돌", color: "blue" },
-        { id: "b_test", name: "테스트", color: "orange" },
-        { id: "b_prod", name: "프로덕션", color: "purple" },
-        { id: "b_anni", name: "기념일", color: "pink" },
+        { id: "b_goal", name: "목표", color: "green" },
         { id: "b_exam", name: "시험", color: "red" },
-        { id: "b_goal", name: "목표", color: "green" }
+        { id: "b_anni", name: "기념일", color: "pink" }
       ],
       items: [
         {
@@ -1790,25 +1912,72 @@
     }
 
     /* ==========================================================================
-       [3. 탭 전환 UX]
+       [3. 탭 전환 UX & 상단 더보기 팝업 모달]
        ========================================================================== */
+    let currentActiveTab = "dday";
+
+    function toggleNavModal(event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      const modal = document.getElementById("nav-modal");
+      const backdrop = document.getElementById("nav-modal-backdrop");
+      const btn = document.getElementById("more-menu-btn");
+      if (!modal) return;
+
+      const isShowing = modal.classList.contains("show");
+      if (isShowing) {
+        closeNavModal();
+      } else {
+        modal.classList.add("show");
+        if (backdrop) backdrop.classList.add("show");
+        if (btn) btn.classList.add("active");
+      }
+    }
+
+    function closeNavModal() {
+      const modal = document.getElementById("nav-modal");
+      const backdrop = document.getElementById("nav-modal-backdrop");
+      const btn = document.getElementById("more-menu-btn");
+      if (modal) modal.classList.remove("show");
+      if (backdrop) backdrop.classList.remove("show");
+      if (btn) btn.classList.remove("active");
+    }
+
+    function selectNavTab(tabName) {
+      switchTab(tabName);
+      closeNavModal();
+    }
+
+    // 모달 외부 클릭 시 닫기
+    document.addEventListener("click", (e) => {
+      const modal = document.getElementById("nav-modal");
+      const btn = document.getElementById("more-menu-btn");
+      if (modal && modal.classList.contains("show")) {
+        if (!modal.contains(e.target) && !btn.contains(e.target)) {
+          closeNavModal();
+        }
+      }
+    });
+
     function switchTab(tabName) {
+      currentActiveTab = tabName;
       const ddayView = document.getElementById("view-dday");
       const settingsView = document.getElementById("view-settings");
-      const ddayBtn = document.getElementById("tab-btn-dday");
-      const settingsBtn = document.getElementById("tab-btn-settings");
+
+      // 팝업 모달 항목 상태 동기화
+      const itemDday = document.getElementById("nav-item-dday");
+      const itemSettings = document.getElementById("nav-item-settings");
+      if (itemDday) itemDday.classList.toggle("active", tabName === "dday");
+      if (itemSettings) itemSettings.classList.toggle("active", tabName === "settings");
 
       if (tabName === "dday") {
         ddayView.classList.add("active");
         settingsView.classList.remove("active");
-        ddayBtn.classList.add("active");
-        settingsBtn.classList.remove("active");
         renderDDayList();
       } else {
         ddayView.classList.remove("active");
         settingsView.classList.add("active");
-        ddayBtn.classList.remove("active");
-        settingsBtn.classList.add("active");
         renderSettingsView();
       }
     }
@@ -1941,7 +2110,7 @@
         listContainer.innerHTML = `
           <div class="empty-state">
             등록된 디데이가 없습니다.<br />
-            상단 <b>[⚙️ 설정]</b> 탭에서 새로운 디데이를 추가해보세요!
+            우측 상단 <b>더보기 메뉴 (<i class="ti ti-dots"></i>) > 환경 설정</b>에서 새로운 디데이를 추가해보세요!
           </div>
         `;
         return;
@@ -2321,7 +2490,7 @@
           <div class="manage-item-info">
             <div class="manage-item-title">${escapeHtml(item.title)}</div>
             <div class="manage-item-meta">
-              <span>📅 ${item.target}</span>
+              <span><i class="ti ti-calendar"></i> ${item.target}</span>
               ${badgeInfo ? `<span class="badge" style="background-color:${badgeInfo.bg}; color:${badgeInfo.text}; font-size:0.7em;">${escapeHtml(badgeInfo.name)}</span>` : ""}
             </div>
           </div>
@@ -2334,16 +2503,16 @@
 
           <!-- 실시간 타이머 및 카운트업 토글러 -->
           <div class="mode-toggle-group">
-            <button type="button" class="mode-btn ${timerActive ? "active" : ""}" onclick="toggleDDayTimer('${item.id}')" title="초 단위 실시간 타이머 노출 여부">⏱️ ${timerActive ? "ON" : "OFF"}</button>
-            <button type="button" class="mode-btn ${pastActive ? "active" : ""}" onclick="toggleDDayCountPast('${item.id}')" title="경과 후 D+N 누적 여부 (OFF: 완료 표시)">📈 ${pastActive ? "ON" : "OFF"}</button>
+            <button type="button" class="mode-btn ${timerActive ? "active" : ""}" onclick="toggleDDayTimer('${item.id}')" title="초 단위 실시간 타이머 노출 여부"><i class="ti ti-clock"></i> ${timerActive ? "ON" : "OFF"}</button>
+            <button type="button" class="mode-btn ${pastActive ? "active" : ""}" onclick="toggleDDayCountPast('${item.id}')" title="경과 후 D+N 누적 여부 (OFF: 완료 표시)"><i class="ti ti-trending-up"></i> ${pastActive ? "ON" : "OFF"}</button>
           </div>
 
           <!-- 순서 변경, 수정, 삭제 버튼 -->
           <div class="manage-item-actions">
-            <button type="button" class="icon-btn" title="위로 이동" onclick="moveDDay(${index}, -1)" ${index === 0 ? "disabled style='opacity:0.3; cursor:default;'" : ""}>▲</button>
-            <button type="button" class="icon-btn" title="아래로 이동" onclick="moveDDay(${index}, 1)" ${index === state.items.length - 1 ? "disabled style='opacity:0.3; cursor:default;'" : ""}>▼</button>
-            <button type="button" class="icon-btn" title="수정" onclick="startEditDDay('${item.id}')">✏️</button>
-            <button type="button" class="icon-btn delete" title="삭제" onclick="deleteDDay('${item.id}')">✕</button>
+            <button type="button" class="icon-btn" title="위로 이동" onclick="moveDDay(${index}, -1)" ${index === 0 ? "disabled style='opacity:0.3; cursor:default;'" : ""}><i class="ti ti-chevron-up"></i></button>
+            <button type="button" class="icon-btn" title="아래로 이동" onclick="moveDDay(${index}, 1)" ${index === state.items.length - 1 ? "disabled style='opacity:0.3; cursor:default;'" : ""}><i class="ti ti-chevron-down"></i></button>
+            <button type="button" class="icon-btn" title="수정" onclick="startEditDDay('${item.id}')"><i class="ti ti-pencil"></i></button>
+            <button type="button" class="icon-btn delete" title="삭제" onclick="deleteDDay('${item.id}')"><i class="ti ti-trash"></i></button>
           </div>
 
           ${isEditing ? `
@@ -2367,7 +2536,7 @@
               </div>
               <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:2px;">
                 <button type="button" class="btn btn-secondary btn-sm" onclick="cancelEditDDay()">취소</button>
-                <button type="button" class="btn btn-primary btn-sm" onclick="saveEditDDay('${item.id}')">💾 저장</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="saveEditDDay('${item.id}')" style="display:inline-flex; align-items:center; gap:4px;"><i class="ti ti-device-floppy"></i> 저장</button>
               </div>
             </div>
           ` : ""}
