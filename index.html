@@ -1,20 +1,39 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Notion D-Day Widget</title>
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <title>D-Day Counter - Notion Widget</title>
+  <!-- Notion 느낌의 폰트 (Pretendard & Inter) -->
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
   <style>
+    /* ============================================================
+       [기본 스타일 & 테마 토큰] 노션 특유의 미니멀 모노톤 테마
+       ============================================================ */
     :root {
-      --bg-page: #ffffff;
-      --bg-card: #fbfbfa;
+      --font-scale: 1;
+      --base-font-size: calc(15px * var(--font-scale, 1));
+      --bg-page: #fbfbfa;
+      --bg-card: #ffffff;
+      --bg-subtle: #f7f6f3;
+      --bg-hover: #f1f1ef;
       --text-main: #37352f;
       --text-muted: #787774;
       --text-faint: #9b9a97;
       --border-color: #e9e9e7;
       --border-hover: #d3d3d0;
-      --radius: 6px;
+      --border-focus: #2eaadc;
+      --radius: 8px;
+      --radius-sm: 5px;
+      --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.04);
+      --shadow: 0 1px 3px rgba(15, 15, 15, 0.06), 0 2px 6px rgba(15, 15, 15, 0.03);
+      --shadow-card: 0 1px 3px rgba(15, 15, 15, 0.05), 0 2px 5px rgba(15, 15, 15, 0.04);
+      --primary: #2383e2;
+      --primary-hover: #1b6ec2;
+      --danger: #eb5757;
+      --danger-bg: #fdf5f5;
     }
 
     * {
@@ -27,337 +46,1519 @@
       background-color: var(--bg-page);
       color: var(--text-main);
       font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 16px;
+      font-size: var(--base-font-size);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 16px;
       -webkit-font-smoothing: antialiased;
+      transition: font-size 0.15s ease;
     }
 
     .container {
-      max-width: 520px;
-      margin: 0 auto;
+      width: 100%;
+      max-width: 580px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* 상단 탭 네비게이션 (Segmented Control) */
+    .tab-bar {
+      display: flex;
+      background-color: var(--bg-subtle);
+      padding: 4px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      gap: 4px;
+      user-select: none;
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 14px;
+      font-size: 0.85em;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: calc(var(--radius) - 2px);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background-color: rgba(0, 0, 0, 0.025);
+    }
+
+    .tab-btn.active {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-view {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .tab-view.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(2px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 상단 헤더 타이틀 */
+    .header {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .header h1 {
+      font-size: 1.25em;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .header .subtitle {
+      font-size: 0.85em;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 디데이 목록 그리드 */
+    .dday-list {
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
 
-    /* 헤더 및 컨트롤 버튼 */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .header-title {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .btn-toggle-add {
-      background: none;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 4px 8px;
-      font-size: 12px;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s ease;
-    }
-
-    .btn-toggle-add:hover {
-      background-color: var(--bg-card);
-      color: var(--text-main);
-      border-color: var(--border-hover);
-    }
-
-    /* 새 디데이 추가 패널 (토글형) */
-    .add-panel {
-      display: none;
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 12px;
-      gap: 8px;
-      flex-direction: column;
-    }
-
-    .add-panel.open {
-      display: flex;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 6px;
-    }
-
-    .input-field {
-      padding: 6px 10px;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      font-size: 13px;
-      color: var(--text-main);
-      outline: none;
-      background-color: #ffffff;
-      flex: 1;
-    }
-
-    .input-field:focus {
-      border-color: var(--text-main);
-    }
-
-    .btn-submit {
-      background-color: var(--text-main);
-      color: #ffffff;
-      border: none;
-      border-radius: var(--radius);
-      padding: 6px 12px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .btn-submit:hover {
-      opacity: 0.9;
-    }
-
-    /* 디데이 목록 */
-    .dday-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
+    /* 개별 디데이 카드 */
     .dday-card {
       background-color: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius);
-      padding: 12px 14px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow-card);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: relative;
-      group: card;
+      gap: 14px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
     .dday-card:hover {
       border-color: var(--border-hover);
+      box-shadow: var(--shadow);
     }
 
     .info-wrap {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
+      min-width: 0;
     }
 
-    .item-title-row {
+    .title-row {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .item-title {
-      font-size: 14px;
+      font-size: 1.05em;
       font-weight: 600;
+      color: var(--text-main);
       letter-spacing: -0.01em;
+      word-break: break-word;
     }
 
-    .item-target-date {
-      font-size: 11px;
+    /* 노션 스타일 배지 */
+    .badge {
+      font-size: 0.75em;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .calc-mode-indicator {
+      font-size: 0.7em;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background-color: var(--bg-subtle);
       color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      letter-spacing: -0.02em;
     }
 
+    .item-meta {
+      font-size: 0.8em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 우측 날짜 및 카운트다운 표시부 */
     .counter-wrap {
       text-align: right;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
       gap: 2px;
+      flex-shrink: 0;
     }
 
     .dday-tag {
-      font-size: 20px;
+      font-size: 1.6em;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
       font-variant-numeric: tabular-nums;
+      color: var(--text-main);
     }
 
-    .btn-delete {
-      background: none;
-      border: none;
+    .countdown-detail {
+      font-size: 0.8em;
       color: var(--text-faint);
-      font-size: 11px;
-      cursor: pointer;
-      margin-top: 2px;
-      padding: 2px 4px;
-    }
-
-    .btn-delete:hover {
-      color: #eb5757;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
     }
 
     .empty-state {
+      padding: 40px 20px;
       text-align: center;
-      font-size: 12px;
       color: var(--text-muted);
-      padding: 24px 0;
+      background-color: var(--bg-card);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius);
+      font-size: 0.9em;
+    }
+
+    /* ============================================================
+       [설정 탭 스타일]
+       ============================================================ */
+    .settings-section {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-title {
+      font-size: 0.95em;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .section-desc {
+      font-size: 0.8em;
+      color: var(--text-muted);
+      margin-top: -6px;
+      margin-bottom: 2px;
+      line-height: 1.4;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .setting-label-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .setting-label {
+      font-size: 0.88em;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .setting-subtext {
+      font-size: 0.76em;
+      color: var(--text-muted);
+    }
+
+    /* 토글 스위치 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #e3e2e0;
+      transition: .2s;
+      border-radius: 20px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+
+    /* 글꼴 크기 프리셋 버튼 & 슬라이더 */
+    .font-size-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .preset-group {
+      display: flex;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .preset-btn {
+      flex: 1;
+      padding: 6px 4px;
+      font-size: 0.78em;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      text-align: center;
+    }
+
+    .preset-btn:hover {
+      background-color: var(--bg-subtle);
+      border-color: var(--border-hover);
+    }
+
+    .preset-btn.active {
+      background-color: var(--text-main);
+      color: #ffffff;
+      border-color: var(--text-main);
+    }
+
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .range-input {
+      flex: 1;
+      accent-color: var(--primary);
+      height: 4px;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    .range-val {
+      font-size: 0.8em;
+      color: var(--text-muted);
+      width: 44px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 폼 입력창들 */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 0.82em;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .input-text, .input-select, .input-date {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 0.85em;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: inherit;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .input-text:focus, .input-select:focus, .input-date:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      background-color: #ffffff;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 세그먼트 토글러 (+0 vs +1) */
+    .mode-toggle-group {
+      display: inline-flex;
+      background-color: var(--bg-subtle);
+      padding: 2px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      user-select: none;
+    }
+
+    .mode-btn {
+      padding: 4px 10px;
+      font-size: 0.78em;
+      font-weight: 500;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      border-radius: calc(var(--radius-sm) - 1px);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .mode-btn:hover {
+      color: var(--text-main);
+    }
+
+    .mode-btn.active {
+      background-color: #ffffff;
+      color: var(--text-main);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    /* 버튼 스타일 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 0.85em;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .btn:hover {
+      background-color: var(--bg-subtle);
+      border-color: var(--border-hover);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 0.78em;
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      background-color: var(--danger-bg);
+      border-color: rgba(235, 87, 87, 0.25);
+    }
+
+    .btn-danger:hover {
+      background-color: #fae6e6;
+      border-color: var(--danger);
+    }
+
+    /* 디데이 목록 관리 항목 */
+    .manage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .manage-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background-color: var(--bg-page);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      transition: border-color 0.15s ease;
+    }
+
+    .manage-item:hover {
+      border-color: var(--border-hover);
+    }
+
+    .manage-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .manage-item-title {
+      font-size: 0.88em;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .manage-item-meta {
+      font-size: 0.76em;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .manage-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-card);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.75em;
+    }
+
+    .icon-btn:hover {
+      color: var(--text-main);
+      border-color: var(--border-hover);
+      background-color: var(--bg-subtle);
+    }
+
+    .icon-btn.delete:hover {
+      color: var(--danger);
+      border-color: var(--danger);
+      background-color: var(--danger-bg);
+    }
+
+    /* 배지 관리 팔레트 & 칩 */
+    .color-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .color-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease, border-color 0.1s ease;
+      font-size: 10px;
+    }
+
+    .color-btn:hover {
+      transform: scale(1.12);
+    }
+
+    .color-btn.active {
+      border-color: var(--text-main);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+    }
+
+    .badge-manager-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      background-color: var(--bg-page);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      min-height: 48px;
+      align-items: center;
+    }
+
+    .badge-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 500;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .badge-chip-del {
+      cursor: pointer;
+      opacity: 0.6;
+      font-size: 0.85em;
+      line-height: 1;
+      padding: 0 2px;
+      transition: opacity 0.15s, color 0.15s;
+    }
+
+    .badge-chip-del:hover {
+      opacity: 1;
+      color: var(--danger);
+    }
+
+    /* 토스트 알림 메시지 */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background-color: rgba(55, 53, 47, 0.92);
+      color: #ffffff;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 0.85em;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
+
 <body>
 
   <div class="container">
-    <div class="header">
-      <span class="header-title">D-Day</span>
-      <button type="button" class="btn-toggle-add" id="btn-toggle">+ 디데이 추가</button>
-    </div>
+    <!-- 상단 탭 스위처 -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" id="tab-btn-dday" onclick="switchTab('dday')">
+        <span>📅</span> 디데이 목록
+      </button>
+      <button class="tab-btn" id="tab-btn-settings" onclick="switchTab('settings')">
+        <span>⚙️</span> 설정
+      </button>
+    </nav>
 
-    <!-- 추가 인라인 패널 -->
-    <div class="add-panel" id="add-panel">
-      <div class="input-row">
-        <input type="text" id="input-title" class="input-field" placeholder="목표 또는 기념일 이름" />
-      </div>
-      <div class="input-row">
-        <input type="date" id="input-date" class="input-field" />
-        <button type="button" class="btn-submit" id="btn-add">추가</button>
-      </div>
-    </div>
+    <!-- [탭 1] 디데이 목록 화면 -->
+    <main class="tab-view active" id="view-dday">
+      <!-- 헤더 (설정 탭에서 표시/숨김 및 타이틀 수정 가능) -->
+      <header class="header" id="header-area">
+        <h1 id="page-title">목표 & 기념일</h1>
+        <span class="subtitle" id="current-today"></span>
+      </header>
 
-    <!-- 디데이 카드 목록 -->
-    <div class="dday-list" id="dday-list"></div>
+      <!-- 디데이 카드 목록 동적 렌더링 영역 -->
+      <section class="dday-list" id="dday-list"></section>
+    </main>
+
+    <!-- [탭 2] 설정 화면 -->
+    <aside class="tab-view" id="view-settings">
+
+      <!-- 1. 글꼴 크기 & 헤더 표시 설정 -->
+      <div class="settings-section">
+        <div class="section-title">
+          <span>🎨 화면 및 글꼴 설정</span>
+        </div>
+
+        <!-- 글꼴 크기 조절 (프리셋 & 슬라이더) -->
+        <div class="form-group">
+          <label class="setting-label">글꼴 크기 조절</label>
+          <div class="font-size-controls">
+            <div class="preset-group">
+              <button type="button" class="preset-btn" onclick="setFontScale(0.85)">작게 (85%)</button>
+              <button type="button" class="preset-btn" onclick="setFontScale(1.00)">보통 (100%)</button>
+              <button type="button" class="preset-btn" onclick="setFontScale(1.15)">크게 (115%)</button>
+              <button type="button" class="preset-btn" onclick="setFontScale(1.30)">아주 크게 (130%)</button>
+            </div>
+            <div class="range-wrap">
+              <input type="range" min="0.8" max="1.4" step="0.05" class="range-input" id="font-scale-slider"
+                oninput="onFontSliderInput(this.value)" />
+              <span class="range-val" id="font-scale-text">100%</span>
+            </div>
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid var(--border-color); margin: 2px 0;" />
+
+        <!-- 제목 표시 on/off 토글 & 제목 텍스트 -->
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <span class="setting-label">제목 표시</span>
+            <span class="setting-subtext">상단 메인 타이틀을 화면에 표시합니다.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-show-title" onchange="updateHeaderSettings()" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" id="title-text-group">
+          <label class="form-label" for="input-header-title">제목 텍스트</label>
+          <input type="text" id="input-header-title" class="input-text" placeholder="예: 목표 & 기념일"
+            oninput="updateHeaderSettings()" />
+        </div>
+
+        <!-- 오늘 날짜 표시 on/off 토글 -->
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <span class="setting-label">오늘 날짜 표시 (Today)</span>
+            <span class="setting-subtext">헤더 우측에 오늘의 실시간 날짜를 표시합니다.</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggle-show-today" onchange="updateHeaderSettings()" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 2. 새로운 디데이 만들기 -->
+      <div class="settings-section">
+        <div class="section-title">
+          <span>➕ 새로운 디데이 만들기</span>
+        </div>
+        <p class="section-desc">목표 날짜와 계산 옵션을 설정하여 새로운 디데이를 추가하세요.</p>
+
+        <form id="new-dday-form" onsubmit="handleCreateDDay(event)" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="form-group">
+            <label class="form-label" for="new-dday-title">디데이 제목 *</label>
+            <input type="text" id="new-dday-title" class="input-text" placeholder="예: 프로젝트 오픈, 자격증 시험, 100일" required />
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label" for="new-dday-date">목표 날짜 *</label>
+              <input type="date" id="new-dday-date" class="input-date" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-dday-badge">배지 선택</label>
+              <select id="new-dday-badge" class="input-select">
+                <option value="">배지 없음</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 당일 계산 방식 (+0 vs +1) -->
+          <div class="setting-row" style="background-color: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-sm);">
+            <div class="setting-label-group">
+              <span class="setting-label">당일 계산 방식</span>
+              <span class="setting-subtext"><b>+0</b>: 당일 D-Day, 다음날 D+1 | <b>+1</b>: 당일 D+1(1일째 시작)</span>
+            </div>
+            <div class="mode-toggle-group" id="new-mode-toggle">
+              <button type="button" class="mode-btn active" id="btn-mode-0" onclick="setNewDDayMode(0)">+0 계산</button>
+              <button type="button" class="mode-btn" id="btn-mode-1" onclick="setNewDDayMode(1)">+1 계산</button>
+            </div>
+          </div>
+
+          <!-- 부가 옵션 토글들 -->
+          <div class="form-grid-2">
+            <div class="setting-row">
+              <div class="setting-label-group">
+                <span class="setting-label">실시간 타이머</span>
+                <span class="setting-subtext">초 단위 카운트다운</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="new-dday-timer" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-label-group">
+                <span class="setting-label">지난 날짜 카운트업</span>
+                <span class="setting-subtext">지나면 +N일로 누적</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="new-dday-past" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="margin-top: 4px;">
+            <span>＋</span> 새 디데이 추가하기
+          </button>
+        </form>
+      </div>
+
+      <!-- 3. 각 디데이별 계산 방식 (+0/+1) 및 목록 관리 -->
+      <div class="settings-section">
+        <div class="section-title">
+          <span>📋 등록된 디데이 관리 (+0 / +1 토글)</span>
+        </div>
+        <p class="section-desc">각 디데이별로 <b>+0</b>(경과일) 또는 <b>+1</b>(1일차 시작) 계산 방식을 즉시 변경할 수 있습니다.</p>
+
+        <div class="manage-list" id="manage-dday-list"></div>
+      </div>
+
+      <!-- 4. 배지 관리 -->
+      <div class="settings-section">
+        <div class="section-title">
+          <span>🏷️ 배지 관리</span>
+        </div>
+        <p class="section-desc">노션 테마 색상으로 디데이에 부착할 배지를 만들고 관리하세요.</p>
+
+        <!-- 새 배지 추가 폼 -->
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="new-badge-name" class="input-text" placeholder="새 배지 이름 (예: 데드라인, 생일)" />
+            <button type="button" class="btn btn-primary btn-sm" onclick="handleAddBadge()" style="flex-shrink:0;">
+              배지 추가
+            </button>
+          </div>
+          <div>
+            <label class="form-label" style="font-size:0.78em;">배지 색상 선택</label>
+            <div class="color-palette" id="color-palette"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 4px;">
+          <label class="form-label" style="font-size:0.78em; margin-bottom: 6px; display:block;">현재 등록된 배지 목록</label>
+          <div class="badge-manager-chips" id="badge-chips-container"></div>
+        </div>
+      </div>
+
+      <!-- 5. 데이터 초기화 -->
+      <div class="settings-section" style="border-color: rgba(235, 87, 87, 0.2);">
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <span class="setting-label" style="color: var(--danger);">기본 설정으로 초기화</span>
+            <span class="setting-subtext">모든 디데이와 설정을 초기 예시 상태로 되돌립니다.</span>
+          </div>
+          <button type="button" class="btn btn-danger btn-sm" onclick="handleResetDefaults()">초기화</button>
+        </div>
+      </div>
+
+    </aside>
   </div>
 
+  <!-- 토스트 알림 컨테이너 -->
+  <div class="toast" id="toast-msg"></div>
+
   <script>
-    // 노션 Sandbox에서 localStorage 에러 방지를 위한 SafeStorage Wrapper
-    const safeStorage = {
-      getItem(key) {
-        try {
-          return localStorage.getItem(key);
-        } catch (e) {
-          return window.__inMemoryFallback ? window.__inMemoryFallback[key] : null;
-        }
-      },
-      setItem(key, value) {
-        try {
-          localStorage.setItem(key, value);
-        } catch (e) {
-          if (!window.__inMemoryFallback) window.__inMemoryFallback = {};
-          window.__inMemoryFallback[key] = value;
-        }
-      }
+    /* ==========================================================================
+       [1. 노션 컬러 팔레트 & 기본 데이터 정의]
+       ========================================================================== */
+    const NOTION_COLORS = {
+      gray:   { name: "회색", bg: "#f1f1ef", text: "#5a5a58" },
+      brown:  { name: "브라운", bg: "#f4eeee", text: "#785e4e" },
+      orange: { name: "오렌지", bg: "#faece3", text: "#bc5b22" },
+      yellow: { name: "노랑", bg: "#fbf3db", text: "#af7d15" },
+      green:  { name: "초록", bg: "#edf3ec", text: "#376e48" },
+      blue:   { name: "파랑", bg: "#e7f3f8", text: "#1d688d" },
+      purple: { name: "보라", bg: "#f4f0f7", text: "#6e4198" },
+      pink:   { name: "핑크", bg: "#fbf0f4", text: "#963863" },
+      red:    { name: "빨강", bg: "#fdebec", text: "#be3a38" }
     };
 
-    // 초기 데이터
-    const STORAGE_KEY = "notion_dday_data_v1";
-    let items = [];
+    const DEFAULT_CONFIG = {
+      fontSizeScale: 1.0,
+      showHeaderTitle: true,
+      headerTitle: "목표 & 기념일",
+      showTodayDate: true,
+      badges: [
+        { id: "b_proj", name: "좌충우돌", color: "blue" },
+        { id: "b_test", name: "테스트", color: "orange" },
+        { id: "b_prod", name: "프로덕션", color: "purple" },
+        { id: "b_anni", name: "기념일", color: "pink" },
+        { id: "b_exam", name: "시험", color: "red" },
+        { id: "b_goal", name: "목표", color: "green" }
+      ],
+      items: [
+        {
+          id: "item_1",
+          title: "시네마보드 프로젝트 시작",
+          target: "2026-06-22",
+          badgeId: "b_proj",
+          dayCountMode: 0, // 0: +0 계산 (당일 D-Day, 익일부터 D+1), 1: +1 계산 (당일 D+1, 1일차 시작)
+          showTimer: true,
+          countPast: true
+        },
+        {
+          id: "item_2",
+          title: "비공개 테스트 시작",
+          target: "2026-10-01",
+          badgeId: "b_test",
+          dayCountMode: 0,
+          showTimer: false,
+          countPast: true
+        },
+        {
+          id: "item_3",
+          title: "프로덕션 심사 제출",
+          target: "2026-10-15",
+          badgeId: "b_prod",
+          dayCountMode: 0,
+          showTimer: true,
+          countPast: true
+        }
+      ]
+    };
 
-    try {
-      const saved = safeStorage.getItem(STORAGE_KEY);
-      items = saved ? JSON.parse(saved) : [
-        { id: "1", title: "프로젝트 런칭", target: "2026-12-31" }
-      ];
-    } catch (e) {
-      items = [{ id: "1", title: "프로젝트 런칭", target: "2026-12-31" }];
+    const STORAGE_KEY = "notion_dday_widget_config_v2";
+
+    // 애플리케이션 상태 (localStorage 연동)
+    let state = loadState();
+    let currentNewDDayMode = 0; // 새 디데이 생성용 임시 모드 (0: +0, 1: +1)
+    let selectedBadgeColor = "blue"; // 새 배지 추가 시 선택된 색상
+
+    /* ==========================================================================
+       [2. 상태 관리 (Storage)]
+       ========================================================================== */
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          return {
+            fontSizeScale: parsed.fontSizeScale ?? DEFAULT_CONFIG.fontSizeScale,
+            showHeaderTitle: parsed.showHeaderTitle ?? DEFAULT_CONFIG.showHeaderTitle,
+            headerTitle: parsed.headerTitle ?? DEFAULT_CONFIG.headerTitle,
+            showTodayDate: parsed.showTodayDate ?? DEFAULT_CONFIG.showTodayDate,
+            badges: Array.isArray(parsed.badges) ? parsed.badges : DEFAULT_CONFIG.badges,
+            items: Array.isArray(parsed.items) ? parsed.items : DEFAULT_CONFIG.items
+          };
+        }
+      } catch (e) {
+        console.warn("설정 로드 실패, 기본값을 사용합니다.", e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
     }
 
-    function saveItems() {
-      safeStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error("설정 저장 실패", e);
+      }
     }
 
-    function calculateDDay(targetDateStr) {
+    function showToast(msg) {
+      const toast = document.getElementById("toast-msg");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2000);
+    }
+
+    /* ==========================================================================
+       [3. 탭 전환 UX]
+       ========================================================================== */
+    function switchTab(tabName) {
+      const ddayView = document.getElementById("view-dday");
+      const settingsView = document.getElementById("view-settings");
+      const ddayBtn = document.getElementById("tab-btn-dday");
+      const settingsBtn = document.getElementById("tab-btn-settings");
+
+      if (tabName === "dday") {
+        ddayView.classList.add("active");
+        settingsView.classList.remove("active");
+        ddayBtn.classList.add("active");
+        settingsBtn.classList.remove("active");
+        renderDDayList();
+      } else {
+        ddayView.classList.remove("active");
+        settingsView.classList.add("active");
+        ddayBtn.classList.remove("active");
+        settingsBtn.classList.add("active");
+        renderSettingsView();
+      }
+    }
+
+    /* ==========================================================================
+       [4. 디데이 및 카운트다운 계산 엔진 (+0 / +1 지원)]
+       ========================================================================== */
+    function formatTargetDate(dateObj) {
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getDate()).padStart(2, "0");
+      return `${year}.${month}.${day}`;
+    }
+
+    function calculateDDay(targetDateStr, countPast, dayCountMode = 0) {
       const now = new Date();
-      const target = new Date(targetDateStr);
-      
+      // targetDateStr가 "YYYY-MM-DD"일 경우 로컬 타임존 자정으로 파싱
+      const parts = targetDateStr.split(/[-T :]/);
+      const target = new Date(
+        parseInt(parts[0], 10),
+        parseInt(parts[1], 10) - 1,
+        parseInt(parts[2], 10),
+        parts[3] ? parseInt(parts[3], 10) : 0,
+        parts[4] ? parseInt(parts[4], 10) : 0,
+        parts[5] ? parseInt(parts[5], 10) : 0
+      );
+
+      // 날짜 단위 비교용 자정 기준 계산
       const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
       const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
       const dayDiff = Math.round((targetMidnight - nowMidnight) / (1000 * 60 * 60 * 24));
 
-      if (dayDiff === 0) return "D-Day";
-      if (dayDiff > 0) return `D-${dayDiff}`;
-      return `D+${Math.abs(dayDiff)}`;
+      // 초 단위 실시간 계산
+      const diffMs = target.getTime() - now.getTime();
+      const isPast = diffMs < 0;
+
+      let ddayText = "";
+      if (dayDiff > 0) {
+        // 미래 목표 날짜
+        ddayText = `D-${dayDiff}`;
+      } else if (dayDiff === 0) {
+        // 당일 (오늘)
+        if (dayCountMode === 1) {
+          ddayText = "D+1"; // +1 모드: 당일을 1일째로 계산
+        } else {
+          ddayText = "D-Day"; // +0 모드: 당일은 D-Day
+        }
+      } else {
+        // 과거 날짜
+        const elapsed = Math.abs(dayDiff);
+        if (!countPast) {
+          ddayText = "완료";
+        } else {
+          if (dayCountMode === 1) {
+            // +1 모드: 당일(1일차) + 경과일
+            ddayText = `D+${elapsed + 1}`;
+          } else {
+            // +0 모드: 순수 경과일수
+            ddayText = `D+${elapsed}`;
+          }
+        }
+      }
+
+      // 정밀 카운트다운 계산 (초/분/시/일)
+      const absMs = Math.abs(diffMs);
+      const totalSec = Math.floor(absMs / 1000);
+      const days = Math.floor(totalSec / 86400);
+      const hours = Math.floor((totalSec % 86400) / 3600);
+      const minutes = Math.floor((totalSec % 3600) / 60);
+      const seconds = totalSec % 60;
+
+      const countdownText = isPast && !countPast
+        ? "일정이 마감되었습니다"
+        : `${days}일 ${String(hours).padStart(2, '0')}시간 ${String(minutes).padStart(2, '0')}분 ${String(seconds).padStart(2, '0')}초`;
+
+      return { ddayText, countdownText, isPast };
     }
 
-    function render() {
+    /* ==========================================================================
+       [5. 렌더링: 디데이 목록 화면]
+       ========================================================================== */
+    function applyFontScale() {
+      document.documentElement.style.setProperty("--font-scale", state.fontSizeScale);
+    }
+
+    function renderHeader() {
+      const headerArea = document.getElementById("header-area");
+      const pageTitle = document.getElementById("page-title");
+      const currentToday = document.getElementById("current-today");
+
+      pageTitle.textContent = state.headerTitle || "목표 & 기념일";
+      pageTitle.style.display = state.showHeaderTitle ? "block" : "none";
+
+      const today = new Date();
+      const days = ["일", "월", "화", "수", "목", "금", "토"];
+      currentToday.textContent = `Today ${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} (${days[today.getDay()]})`;
+      currentToday.style.display = state.showTodayDate ? "block" : "none";
+
+      if (!state.showHeaderTitle && !state.showTodayDate) {
+        headerArea.style.display = "none";
+      } else {
+        headerArea.style.display = "flex";
+      }
+    }
+
+    function getBadgeInfo(badgeId) {
+      if (!badgeId) return null;
+      const found = state.badges.find(b => b.id === badgeId);
+      if (found) {
+        const colorData = NOTION_COLORS[found.color] || NOTION_COLORS.gray;
+        return { name: found.name, bg: colorData.bg, text: colorData.text };
+      }
+      return null;
+    }
+
+    function renderDDayList() {
+      renderHeader();
+      applyFontScale();
+
       const listContainer = document.getElementById("dday-list");
       listContainer.innerHTML = "";
 
-      if (items.length === 0) {
-        listContainer.innerHTML = `<div class="empty-state">등록된 디데이가 없습니다. 상단 + 버튼을 눌러 추가해 보세요.</div>`;
+      if (!state.items || state.items.length === 0) {
+        listContainer.innerHTML = `
+          <div class="empty-state">
+            등록된 디데이가 없습니다.<br />
+            상단 <b>[⚙️ 설정]</b> 탭에서 새로운 디데이를 추가해보세요!
+          </div>
+        `;
         return;
       }
 
-      items.forEach((item) => {
-        const ddayText = calculateDDay(item.target);
+      state.items.forEach((item, index) => {
+        const parts = item.target.split(/[-T :]/);
+        const targetDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const mode = item.dayCountMode ?? 0;
+        const { ddayText, countdownText } = calculateDDay(item.target, item.countPast, mode);
+        const badgeInfo = getBadgeInfo(item.badgeId);
+
         const card = document.createElement("div");
         card.className = "dday-card";
         card.innerHTML = `
           <div class="info-wrap">
-            <div class="item-title-row">
-              <span class="item-title">${item.title}</span>
+            <div class="title-row">
+              <span class="item-title">${escapeHtml(item.title)}</span>
+              ${badgeInfo ? `<span class="badge" style="background-color: ${badgeInfo.bg}; color: ${badgeInfo.text};">${escapeHtml(badgeInfo.name)}</span>` : ""}
+              <span class="calc-mode-indicator" title="당일 계산 기준">${mode === 1 ? "+1 시작" : "+0 기준"}</span>
             </div>
-            <span class="item-target-date">${item.target}</span>
+            <div class="item-meta">
+              <span>목표일: ${formatTargetDate(targetDate)}</span>
+            </div>
           </div>
           <div class="counter-wrap">
             <div class="dday-tag">${ddayText}</div>
-            <button type="button" class="btn-delete" data-id="${item.id}">삭제</button>
+            ${item.showTimer ? `<div class="countdown-detail" id="timer-${index}">${countdownText}</div>` : ""}
           </div>
         `;
         listContainer.appendChild(card);
       });
+    }
 
-      // 삭제 버튼 이벤트 바인딩
-      document.querySelectorAll(".btn-delete").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          const id = e.target.getAttribute("data-id");
-          items = items.filter((it) => it.id !== id);
-          saveItems();
-          render();
-        });
+    function updateTimers() {
+      // 디데이 탭이 활성화되어 있을 때만 초 단위 갱신
+      const ddayView = document.getElementById("view-dday");
+      if (!ddayView.classList.contains("active")) return;
+
+      state.items.forEach((item, index) => {
+        if (!item.showTimer) return;
+        const timerEl = document.getElementById(`timer-${index}`);
+        if (timerEl) {
+          const mode = item.dayCountMode ?? 0;
+          const { countdownText } = calculateDDay(item.target, item.countPast, mode);
+          timerEl.textContent = countdownText;
+        }
       });
     }
 
-    // 패널 토글 동작
-    const btnToggle = document.getElementById("btn-toggle");
-    const addPanel = document.getElementById("add-panel");
-    btnToggle.addEventListener("click", () => {
-      addPanel.classList.toggle("open");
-    });
+    /* ==========================================================================
+       [6. 렌더링 & 제어: 설정 화면]
+       ========================================================================== */
+    function renderSettingsView() {
+      applyFontScale();
 
-    // 항목 추가 동작 (form submit 대신 독립 button click 이벤트)
-    const btnAdd = document.getElementById("btn-add");
-    const inputTitle = document.getElementById("input-title");
-    const inputDate = document.getElementById("input-date");
+      // 1. 글꼴 슬라이더 및 프리셋 버튼 상태
+      const slider = document.getElementById("font-scale-slider");
+      const text = document.getElementById("font-scale-text");
+      slider.value = state.fontSizeScale;
+      text.textContent = Math.round(state.fontSizeScale * 100) + "%";
+      updatePresetButtonHighlight(state.fontSizeScale);
 
-    btnAdd.addEventListener("click", () => {
-      const title = inputTitle.value.trim();
-      const date = inputDate.value;
+      // 2. 제목 & 오늘 날짜 토글
+      document.getElementById("toggle-show-title").checked = state.showHeaderTitle;
+      document.getElementById("input-header-title").value = state.headerTitle || "";
+      document.getElementById("toggle-show-today").checked = state.showTodayDate;
+      document.getElementById("title-text-group").style.display = state.showHeaderTitle ? "flex" : "none";
 
-      if (!title || !date) {
-        alert("제목과 날짜를 모두 입력해 주세요.");
+      // 3. 새 디데이 폼의 배지 선택 셀렉트박스 갱신
+      renderBadgeSelectOptions();
+
+      // 4. 배지 관리 팔레트 및 배지 칩 렌더링
+      renderColorPalette();
+      renderBadgeChips();
+
+      // 5. 디데이 관리 목록 렌더링
+      renderManageDDayList();
+    }
+
+    /* --- 글꼴 크기 제어 --- */
+    function setFontScale(scale) {
+      state.fontSizeScale = parseFloat(scale);
+      document.getElementById("font-scale-slider").value = state.fontSizeScale;
+      document.getElementById("font-scale-text").textContent = Math.round(state.fontSizeScale * 100) + "%";
+      updatePresetButtonHighlight(state.fontSizeScale);
+      applyFontScale();
+      saveState();
+    }
+
+    function onFontSliderInput(val) {
+      state.fontSizeScale = parseFloat(val);
+      document.getElementById("font-scale-text").textContent = Math.round(state.fontSizeScale * 100) + "%";
+      updatePresetButtonHighlight(state.fontSizeScale);
+      applyFontScale();
+      saveState();
+    }
+
+    function updatePresetButtonHighlight(scale) {
+      const presets = document.querySelectorAll(".preset-btn");
+      presets.forEach(btn => btn.classList.remove("active"));
+      if (Math.abs(scale - 0.85) < 0.02) presets[0]?.classList.add("active");
+      else if (Math.abs(scale - 1.00) < 0.02) presets[1]?.classList.add("active");
+      else if (Math.abs(scale - 1.15) < 0.02) presets[2]?.classList.add("active");
+      else if (Math.abs(scale - 1.30) < 0.02) presets[3]?.classList.add("active");
+    }
+
+    /* --- 헤더 및 오늘 날짜 설정 --- */
+    function updateHeaderSettings() {
+      state.showHeaderTitle = document.getElementById("toggle-show-title").checked;
+      state.headerTitle = document.getElementById("input-header-title").value.trim();
+      state.showTodayDate = document.getElementById("toggle-show-today").checked;
+
+      document.getElementById("title-text-group").style.display = state.showHeaderTitle ? "flex" : "none";
+      renderHeader();
+      saveState();
+    }
+
+    /* --- 새 디데이 추가 --- */
+    function setNewDDayMode(mode) {
+      currentNewDDayMode = mode;
+      document.getElementById("btn-mode-0").classList.toggle("active", mode === 0);
+      document.getElementById("btn-mode-1").classList.toggle("active", mode === 1);
+    }
+
+    function handleCreateDDay(e) {
+      e.preventDefault();
+      const title = document.getElementById("new-dday-title").value.trim();
+      const target = document.getElementById("new-dday-date").value;
+      const badgeId = document.getElementById("new-dday-badge").value;
+      const showTimer = document.getElementById("new-dday-timer").checked;
+      const countPast = document.getElementById("new-dday-past").checked;
+
+      if (!title || !target) {
+        alert("제목과 목표 날짜를 입력해주세요.");
         return;
       }
 
-      items.push({
-        id: Date.now().toString(),
-        title: title,
-        target: date
+      const newItem = {
+        id: "item_" + Date.now(),
+        title,
+        target,
+        badgeId: badgeId || null,
+        dayCountMode: currentNewDDayMode,
+        showTimer,
+        countPast
+      };
+
+      state.items.push(newItem);
+      saveState();
+
+      // 폼 초기화
+      document.getElementById("new-dday-title").value = "";
+      document.getElementById("new-dday-date").value = "";
+      document.getElementById("new-dday-badge").value = "";
+      setNewDDayMode(0);
+
+      renderManageDDayList();
+      showToast("새 디데이가 추가되었습니다!");
+    }
+
+    /* --- 각 디데이별 +0 / +1 계산 방식 즉시 토글 및 순서/삭제 관리 --- */
+    function toggleDDayMode(itemId, newMode) {
+      const item = state.items.find(it => it.id === itemId);
+      if (item) {
+        item.dayCountMode = newMode;
+        saveState();
+        renderManageDDayList();
+        showToast(`계산 방식이 [${newMode === 1 ? "+1 (1일차 시작)" : "+0 (당일 D-Day)"}] 로 변경되었습니다.`);
+      }
+    }
+
+    function moveDDay(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= state.items.length) return;
+      const temp = state.items[index];
+      state.items[index] = state.items[newIndex];
+      state.items[newIndex] = temp;
+      saveState();
+      renderManageDDayList();
+    }
+
+    function deleteDDay(itemId) {
+      const item = state.items.find(it => it.id === itemId);
+      if (!item) return;
+      if (confirm(`'${item.title}' 디데이를 삭제하시겠습니까?`)) {
+        state.items = state.items.filter(it => it.id !== itemId);
+        saveState();
+        renderManageDDayList();
+        showToast("디데이가 삭제되었습니다.");
+      }
+    }
+
+    function renderManageDDayList() {
+      const container = document.getElementById("manage-dday-list");
+      container.innerHTML = "";
+
+      if (!state.items || state.items.length === 0) {
+        container.innerHTML = `<div style="font-size:0.85em; color:var(--text-muted); text-align:center; padding:16px;">등록된 디데이가 없습니다.</div>`;
+        return;
+      }
+
+      state.items.forEach((item, index) => {
+        const badgeInfo = getBadgeInfo(item.badgeId);
+        const mode = item.dayCountMode ?? 0;
+        const itemEl = document.createElement("div");
+        itemEl.className = "manage-item";
+        itemEl.innerHTML = `
+          <div class="manage-item-info">
+            <div class="manage-item-title">${escapeHtml(item.title)}</div>
+            <div class="manage-item-meta">
+              <span>📅 ${item.target}</span>
+              ${badgeInfo ? `<span class="badge" style="background-color:${badgeInfo.bg}; color:${badgeInfo.text}; font-size:0.7em;">${escapeHtml(badgeInfo.name)}</span>` : ""}
+            </div>
+          </div>
+
+          <!-- +0 vs +1 즉시 선택 토글러 -->
+          <div class="mode-toggle-group">
+            <button type="button" class="mode-btn ${mode === 0 ? "active" : ""}" onclick="toggleDDayMode('${item.id}', 0)">+0</button>
+            <button type="button" class="mode-btn ${mode === 1 ? "active" : ""}" onclick="toggleDDayMode('${item.id}', 1)">+1</button>
+          </div>
+
+          <!-- 순서 변경 및 삭제 버튼 -->
+          <div class="manage-item-actions">
+            <button type="button" class="icon-btn" title="위로 이동" onclick="moveDDay(${index}, -1)" ${index === 0 ? "disabled style='opacity:0.3; cursor:default;'" : ""}>▲</button>
+            <button type="button" class="icon-btn" title="아래로 이동" onclick="moveDDay(${index}, 1)" ${index === state.items.length - 1 ? "disabled style='opacity:0.3; cursor:default;'" : ""}>▼</button>
+            <button type="button" class="icon-btn delete" title="삭제" onclick="deleteDDay('${item.id}')">✕</button>
+          </div>
+        `;
+        container.appendChild(itemEl);
+      });
+    }
+
+    /* --- 배지 관리 --- */
+    function renderColorPalette() {
+      const palette = document.getElementById("color-palette");
+      palette.innerHTML = "";
+
+      Object.entries(NOTION_COLORS).forEach(([key, color]) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `color-btn ${selectedBadgeColor === key ? "active" : ""}`;
+        btn.style.backgroundColor = color.bg;
+        btn.style.color = color.text;
+        btn.title = color.name;
+        btn.textContent = "●";
+        btn.onclick = () => {
+          selectedBadgeColor = key;
+          renderColorPalette();
+        };
+        palette.appendChild(btn);
+      });
+    }
+
+    function renderBadgeSelectOptions() {
+      const select = document.getElementById("new-dday-badge");
+      const currentVal = select.value;
+      select.innerHTML = `<option value="">배지 없음</option>`;
+
+      state.badges.forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b.id;
+        opt.textContent = `${b.name} (${NOTION_COLORS[b.color]?.name || "기본"})`;
+        select.appendChild(opt);
       });
 
-      saveItems();
-      render();
+      select.value = currentVal;
+    }
 
-      // 인풋 초기화 및 닫기
-      inputTitle.value = "";
-      inputDate.value = "";
-      addPanel.classList.remove("open");
-    });
+    function renderBadgeChips() {
+      const container = document.getElementById("badge-chips-container");
+      container.innerHTML = "";
 
-    // 초기 실행
-    render();
+      if (!state.badges || state.badges.length === 0) {
+        container.innerHTML = `<span style="font-size:0.8em; color:var(--text-muted);">등록된 배지가 없습니다. 위에서 배지를 만들어보세요.</span>`;
+        return;
+      }
+
+      state.badges.forEach(badge => {
+        const color = NOTION_COLORS[badge.color] || NOTION_COLORS.gray;
+        const chip = document.createElement("span");
+        chip.className = "badge-chip";
+        chip.style.backgroundColor = color.bg;
+        chip.style.color = color.text;
+        chip.innerHTML = `
+          <span>${escapeHtml(badge.name)}</span>
+          <span class="badge-chip-del" title="배지 삭제" onclick="handleDeleteBadge('${badge.id}')">✕</span>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    function handleAddBadge() {
+      const input = document.getElementById("new-badge-name");
+      const name = input.value.trim();
+      if (!name) {
+        alert("배지 이름을 입력해주세요.");
+        return;
+      }
+
+      const newBadge = {
+        id: "b_" + Date.now(),
+        name,
+        color: selectedBadgeColor
+      };
+
+      state.badges.push(newBadge);
+      saveState();
+      input.value = "";
+
+      renderBadgeChips();
+      renderBadgeSelectOptions();
+      showToast(`'${name}' 배지가 추가되었습니다.`);
+    }
+
+    function handleDeleteBadge(badgeId) {
+      const badge = state.badges.find(b => b.id === badgeId);
+      if (!badge) return;
+
+      if (confirm(`'${badge.name}' 배지를 삭제하시겠습니까?`)) {
+        state.badges = state.badges.filter(b => b.id !== badgeId);
+        // 디데이 중 이 배지를 쓰고 있던 항목은 null로 변경
+        state.items.forEach(it => {
+          if (it.badgeId === badgeId) it.badgeId = null;
+        });
+        saveState();
+
+        renderBadgeChips();
+        renderBadgeSelectOptions();
+        renderManageDDayList();
+        showToast("배지가 삭제되었습니다.");
+      }
+    }
+
+    /* --- 기본값 복원 --- */
+    function handleResetDefaults() {
+      if (confirm("모든 설정과 디데이 목록을 초기 상태로 되돌리시겠습니까?")) {
+        state = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+        saveState();
+        renderDDayList();
+        renderSettingsView();
+        showToast("기본 설정으로 초기화되었습니다.");
+      }
+    }
+
+    /* 유틸리티: HTML 이스케이프 */
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    /* ==========================================================================
+       [7. 초기화 및 이벤트 리스너]
+       ========================================================================== */
+    // 오늘 날짜를 새 디데이 기본 날짜로 세팅
+    const todayStr = new Date().toISOString().split("T")[0];
+    document.getElementById("new-dday-date").value = todayStr;
+
+    // 초기 렌더링
+    renderDDayList();
+    renderSettingsView();
+
+    // 1초마다 실시간 타이머 갱신
+    setInterval(updateTimers, 1000);
   </script>
 </body>
+
 </html>
