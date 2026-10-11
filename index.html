@@ -128,8 +128,15 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(2px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(2px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* 상단 헤더 타이틀 */
@@ -344,7 +351,10 @@
     .slider {
       position: absolute;
       cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background-color: #e3e2e0;
       transition: .2s;
       border-radius: 20px;
@@ -363,11 +373,11 @@
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
 
-    input:checked + .slider {
+    input:checked+.slider {
       background-color: var(--primary);
     }
 
-    input:checked + .slider:before {
+    input:checked+.slider:before {
       transform: translateX(16px);
     }
 
@@ -446,7 +456,9 @@
       color: var(--text-main);
     }
 
-    .input-text, .input-select, .input-date {
+    .input-text,
+    .input-select,
+    .input-date {
       width: 100%;
       padding: 8px 10px;
       font-size: 0.85em;
@@ -458,7 +470,9 @@
       transition: border-color 0.15s, background-color 0.15s;
     }
 
-    .input-text:focus, .input-select:focus, .input-date:focus {
+    .input-text:focus,
+    .input-select:focus,
+    .input-date:focus {
       outline: none;
       border-color: var(--border-focus);
       background-color: #ffffff;
@@ -753,17 +767,18 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    /* URL 파라미터 모드 알림 배너 */
+    /* URL 파라미터 모드 알림 배너 (설정 탭 내부) */
     .url-param-banner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      padding: 9px 12px;
+      gap: 10px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
       background-color: var(--bg-subtle);
       border: 1px dashed var(--primary);
       border-radius: var(--radius);
-      font-size: 0.82em;
+      font-size: 0.84em;
       color: var(--text-main);
     }
 
@@ -890,7 +905,8 @@
 <body>
 
   <!-- 위젯 모드(?hideTabs=1) 전용 탈출/설정 바로가기 버튼 -->
-  <button type="button" id="floating-settings-btn" class="floating-settings-btn" onclick="openSettingsFromWidget()" title="⚙️ 설정 열기">
+  <button type="button" id="floating-settings-btn" class="floating-settings-btn" onclick="openSettingsFromWidget()"
+    title="⚙️ 설정 열기">
     ⚙️
   </button>
 
@@ -917,15 +933,6 @@
 
       <!-- 디데이 카드 목록 동적 렌더링 영역 -->
       <section class="dday-list" id="dday-list"></section>
-
-      <!-- URL 파라미터 분기 모드 알림 배너 (디데이 목록 하단에 배치) -->
-      <div id="url-param-banner" class="url-param-banner" style="display: none;">
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span class="url-param-badge" id="url-param-badge-text">⚡ URL 분기 모드</span>
-          <button type="button" class="btn btn-primary btn-sm" onclick="saveCurrentUrlItemsToLocal()" style="font-size:0.75em; padding:3px 8px; font-weight:600;" title="현재 화면에 보이는 디데이들을 이 기기 로컬에 기본 목록으로 저장">💾 이 기기에 저장</button>
-        </div>
-        <button type="button" class="url-reset-link" onclick="resetToLocalList()" style="background:none; border:none; padding:0; cursor:pointer;" title="기본 저장 목록으로 돌아가기">기본 목록 (초기화)</button>
-      </div>
     </main>
 
     <!-- [탭 2] 설정 화면 -->
@@ -957,35 +964,62 @@
 
         <hr style="border: none; border-top: 1px solid var(--border-color); margin: 2px 0;" />
 
-        <!-- 제목 표시 on/off 토글 & 제목 텍스트 -->
+        <!-- 상단 헤더 표시 (부모 토글) -->
         <div class="setting-row">
           <div class="setting-label-group">
-            <span class="setting-label">제목 표시</span>
-            <span class="setting-subtext">상단 메인 타이틀을 화면에 표시합니다.</span>
+            <span class="setting-label">상단 헤더 표시</span>
+            <span class="setting-subtext">제목 및 오늘 날짜가 위치하는 상단 헤더 영역을 표시합니다.</span>
           </div>
           <label class="switch">
-            <input type="checkbox" id="toggle-show-title" onchange="updateHeaderSettings()" />
+            <input type="checkbox" id="toggle-show-header" onchange="onToggleHeaderArea()" />
             <span class="slider"></span>
           </label>
         </div>
 
-        <div class="form-group" id="title-text-group">
-          <label class="form-label" for="input-header-title">제목 텍스트</label>
-          <input type="text" id="input-header-title" class="input-text" placeholder="예: 목표 & 기념일"
-            oninput="updateHeaderSettings()" />
-        </div>
-
-        <!-- 오늘 날짜 표시 on/off 토글 -->
-        <div class="setting-row">
-          <div class="setting-label-group">
-            <span class="setting-label">오늘 날짜 표시 (Today)</span>
-            <span class="setting-subtext">헤더 우측에 오늘의 실시간 날짜를 표시합니다.</span>
+        <!-- 헤더 세부 옵션 (상단 헤더 표시 활성화 시에만 노출) -->
+        <div id="header-sub-options"
+          style="display: flex; flex-direction: column; gap: 12px; margin-left: 6px; padding-left: 12px; border-left: 2px solid var(--border-color);">
+          <!-- 제목 표시 on/off 토글 & 제목 텍스트 -->
+          <div class="setting-row">
+            <div class="setting-label-group">
+              <span class="setting-label">제목 표시</span>
+              <span class="setting-subtext">상단 메인 타이틀을 화면에 표시합니다.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-show-title" onchange="updateHeaderSettings()" />
+              <span class="slider"></span>
+            </label>
           </div>
-          <label class="switch">
-            <input type="checkbox" id="toggle-show-today" onchange="updateHeaderSettings()" />
-            <span class="slider"></span>
-          </label>
+
+          <div class="form-group" id="title-text-group">
+            <label class="form-label" for="input-header-title">제목 텍스트</label>
+            <input type="text" id="input-header-title" class="input-text" placeholder="예: 목표 & 기념일"
+              oninput="updateHeaderSettings()" />
+          </div>
+
+          <!-- 오늘 날짜 표시 on/off 토글 -->
+          <div class="setting-row">
+            <div class="setting-label-group">
+              <span class="setting-label">오늘 날짜 표시 (Today)</span>
+              <span class="setting-subtext">헤더 우측에 오늘의 실시간 날짜를 표시합니다.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-show-today" onchange="updateHeaderSettings()" />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
+      </div>
+
+      <!-- URL 파라미터 분기 모드 알림 배너 (노션 임베드 링크 생성기 바로 위) -->
+      <div id="url-param-banner" class="url-param-banner" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span class="url-param-badge" id="url-param-badge-text">⚡ URL 분기 모드</span>
+          <button type="button" class="btn btn-primary btn-sm" onclick="saveCurrentUrlItemsToLocal()"
+            style="font-size:0.78em; padding:4px 10px; font-weight:600;" title="현재 화면에 보이는 디데이들을 이 기기 로컬에 기본 목록으로 저장">💾 이 기기에 저장</button>
+        </div>
+        <button type="button" class="url-reset-link" onclick="resetToLocalList()"
+          style="background:none; border:none; padding:0; cursor:pointer;" title="기본 저장 목록으로 돌아가기">기본 목록 (초기화)</button>
       </div>
 
       <!-- 2. 노션 임베드 링크 생성기 (URL 파라미터 분기) -->
@@ -1001,7 +1035,8 @@
         <div class="form-group">
           <label class="form-label">분기 방식 선택</label>
           <div class="preset-group">
-            <button type="button" class="preset-btn active" id="gen-type-current" onclick="setGenType('current')">📌 현재 내 디데이</button>
+            <button type="button" class="preset-btn active" id="gen-type-current" onclick="setGenType('current')">📌 현재
+              내 디데이</button>
             <button type="button" class="preset-btn" id="gen-type-preset" onclick="setGenType('preset')">사전 프리셋</button>
             <button type="button" class="preset-btn" id="gen-type-badge" onclick="setGenType('badge')">배지 필터</button>
             <button type="button" class="preset-btn" id="gen-type-custom" onclick="setGenType('custom')">직접 작성</button>
@@ -1010,7 +1045,8 @@
 
         <!-- 0. 현재 목록 안내 영역 -->
         <div class="form-group" id="gen-area-current">
-          <p class="section-desc" style="margin: 0; padding: 10px 12px; background-color: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <p class="section-desc"
+            style="margin: 0; padding: 10px 12px; background-color: var(--bg-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
             ✨ <b>현재 내 디데이 전체를 URL로 인코딩</b>합니다. 이 URL을 노션에 임베드하거나 다른 기기 주소창에 넣으면 코드 변경 없이도 동일한 디데이가 즉시 동기화되어 나타납니다.
           </p>
         </div>
@@ -1032,81 +1068,32 @@
         <!-- C. 직접 입력 영역 -->
         <div class="form-group" id="gen-area-custom" style="display: none;">
           <label class="form-label" for="gen-custom-items">디데이 직접 작성 (양식: 제목:YYYY-MM-DD, 쉼표 구분)</label>
-          <input type="text" id="gen-custom-items" class="input-text" placeholder="예: 시험:2026-11-15, 종강:2026-12-20" oninput="updateGeneratedUrl()" />
-          <span class="setting-subtext" style="margin-top:2px;">* 간편 입력: <code>20261231</code>, <code>12-25</code>(올해), <code>제목:날짜:배지명:1</code>(+1모드) 지원</span>
+          <input type="text" id="gen-custom-items" class="input-text" placeholder="예: 시험:2026-11-15, 종강:2026-12-20"
+            oninput="updateGeneratedUrl()" />
+          <span class="setting-subtext" style="margin-top:2px;">* 간편 입력: <code>20261231</code>, <code>12-25</code>(올해),
+            <code>제목:날짜:배지명:1</code>(+1모드) 지원</span>
         </div>
 
-        <!-- 부가 옵션 -->
-        <div class="form-grid-2">
-          <div class="setting-row">
-            <div class="setting-label-group">
-              <span class="setting-label">탭 바 숨김 (위젯 모드)</span>
-              <span class="setting-subtext">노션에 깔끔하게 디데이만 노출</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="gen-opt-hidetabs" checked onchange="updateGeneratedUrl()" />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label-group">
-              <span class="setting-label">상단 헤더 표시</span>
-              <span class="setting-subtext">제목 및 오늘 날짜 헤더 노출</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="gen-opt-header" checked onchange="updateGeneratedUrl()" />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label-group">
-              <span class="setting-label">오늘 날짜 표시 (Today)</span>
-              <span class="setting-subtext">헤더 우측 실시간 오늘 날짜</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="gen-opt-showtoday" checked onchange="updateGeneratedUrl()" />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label-group">
-              <span class="setting-label">실시간 타이머</span>
-              <span class="setting-subtext">초 단위 카운트다운 노출</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="gen-opt-timer" checked onchange="updateGeneratedUrl()" />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label-group">
-              <span class="setting-label">지난 날짜 카운트업</span>
-              <span class="setting-subtext">경과 시 +N일 누적 (OFF: 완료 표시)</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="gen-opt-countpast" checked onchange="updateGeneratedUrl()" />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="setting-row">
-            <div class="setting-label-group">
-              <span class="setting-label">컴팩트 여백 모드</span>
-              <span class="setting-subtext">노션 사이드바 및 좁은 블록용</span>
-            </div>
-            <label class="switch">
-              <input type="checkbox" id="gen-opt-compact" onchange="updateGeneratedUrl()" />
-              <span class="slider"></span>
-            </label>
-          </div>
+        <!-- 부가 옵션: 위젯 화면 모드 (드롭다운) & 스위치들 -->
+        <div class="form-group">
+          <label class="form-label" for="gen-view-mode">위젯 화면 모드 (탭 및 여백 선택)</label>
+          <select id="gen-view-mode" class="input-select" onchange="updateGeneratedUrl()">
+            <option value="widget" selected>일반 위젯 모드 (탭 숨김 + 기본 넉넉한 여백 / 노션 본문용)</option>
+            <option value="compact">컴팩트 위젯 모드 (탭 숨김 + 좁은 여백 / 사이드바 & 2·3단 컬럼용)</option>
+            <option value="full">전체 화면 모드 (탭 노출 + 기본 여백 / 일반 브라우저 직접 사용용)</option>
+          </select>
         </div>
+
 
         <!-- 결과 URL 표시 및 복사 -->
         <div class="form-group">
           <label class="form-label">생성된 노션 임베드 URL</label>
           <div class="url-preview-box">
             <input type="text" id="gen-result-url" class="url-preview-input" readonly />
-            <button type="button" class="btn btn-primary btn-sm" onclick="copyGeneratedUrl()" style="flex-shrink:0;">복사</button>
-            <a id="gen-test-link" href="#" target="_blank" class="btn btn-secondary btn-sm" style="flex-shrink:0; text-decoration:none; display:inline-flex; align-items:center;">열기 ↗</a>
+            <button type="button" class="btn btn-primary btn-sm" onclick="copyGeneratedUrl()"
+              style="flex-shrink:0;">복사</button>
+            <a id="gen-test-link" href="#" target="_blank" class="btn btn-secondary btn-sm"
+              style="flex-shrink:0; text-decoration:none; display:inline-flex; align-items:center;">열기 ↗</a>
           </div>
         </div>
       </div>
@@ -1118,7 +1105,8 @@
         </div>
         <p class="section-desc">목표 날짜와 계산 옵션을 설정하여 새로운 디데이를 추가하세요.</p>
 
-        <form id="new-dday-form" onsubmit="handleCreateDDay(event)" style="display:flex; flex-direction:column; gap:12px;">
+        <form id="new-dday-form" onsubmit="handleCreateDDay(event)"
+          style="display:flex; flex-direction:column; gap:12px;">
           <div class="form-group">
             <label class="form-label" for="new-dday-title">디데이 제목 *</label>
             <input type="text" id="new-dday-title" class="input-text" placeholder="예: 프로젝트 오픈, 자격증 시험, 100일" required />
@@ -1138,7 +1126,8 @@
           </div>
 
           <!-- 당일 계산 방식 (+0 vs +1) -->
-          <div class="setting-row" style="background-color: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-sm);">
+          <div class="setting-row"
+            style="background-color: var(--bg-subtle); padding: 10px 12px; border-radius: var(--radius-sm);">
             <div class="setting-label-group">
               <span class="setting-label">당일 계산 방식</span>
               <span class="setting-subtext"><b>+0</b>: 당일 D-Day, 다음날 D+1 | <b>+1</b>: 당일 D+1(1일째 시작)</span>
@@ -1239,19 +1228,20 @@
        [1. 노션 컬러 팔레트 & 기본 데이터 정의]
        ========================================================================== */
     const NOTION_COLORS = {
-      gray:   { name: "회색", bg: "#f1f1ef", text: "#5a5a58" },
-      brown:  { name: "브라운", bg: "#f4eeee", text: "#785e4e" },
+      gray: { name: "회색", bg: "#f1f1ef", text: "#5a5a58" },
+      brown: { name: "브라운", bg: "#f4eeee", text: "#785e4e" },
       orange: { name: "오렌지", bg: "#faece3", text: "#bc5b22" },
       yellow: { name: "노랑", bg: "#fbf3db", text: "#af7d15" },
-      green:  { name: "초록", bg: "#edf3ec", text: "#376e48" },
-      blue:   { name: "파랑", bg: "#e7f3f8", text: "#1d688d" },
+      green: { name: "초록", bg: "#edf3ec", text: "#376e48" },
+      blue: { name: "파랑", bg: "#e7f3f8", text: "#1d688d" },
       purple: { name: "보라", bg: "#f4f0f7", text: "#6e4198" },
-      pink:   { name: "핑크", bg: "#fbf0f4", text: "#963863" },
-      red:    { name: "빨강", bg: "#fdebec", text: "#be3a38" }
+      pink: { name: "핑크", bg: "#fbf0f4", text: "#963863" },
+      red: { name: "빨강", bg: "#fdebec", text: "#be3a38" }
     };
 
     const DEFAULT_CONFIG = {
       fontSizeScale: 1.0,
+      showHeaderArea: true,
       showHeaderTitle: true,
       headerTitle: "목표 & 기념일",
       showTodayDate: true,
@@ -1387,6 +1377,7 @@
           const parsed = JSON.parse(saved);
           return {
             fontSizeScale: parsed.fontSizeScale ?? DEFAULT_CONFIG.fontSizeScale,
+            showHeaderArea: parsed.showHeaderArea ?? (parsed.showHeaderTitle !== false || parsed.showTodayDate !== false),
             showHeaderTitle: parsed.showHeaderTitle ?? DEFAULT_CONFIG.showHeaderTitle,
             headerTitle: parsed.headerTitle ?? DEFAULT_CONFIG.headerTitle,
             showTodayDate: parsed.showTodayDate ?? DEFAULT_CONFIG.showTodayDate,
@@ -1740,7 +1731,9 @@
 
       const showHeader = params.get("showHeader");
       if (showHeader !== null) {
-        state.showHeaderTitle = showHeader !== "0" && showHeader !== "false";
+        const isHeaderOn = showHeader !== "0" && showHeader !== "false";
+        state.showHeaderArea = isHeaderOn;
+        state.showHeaderTitle = isHeaderOn;
       }
 
       const showToday = params.get("showToday");
@@ -1893,15 +1886,19 @@
       const pageTitle = document.getElementById("page-title");
       const currentToday = document.getElementById("current-today");
 
+      const headerAreaActive = state.showHeaderArea !== false;
+      const titleActive = headerAreaActive && Boolean(state.showHeaderTitle);
+      const todayActive = headerAreaActive && Boolean(state.showTodayDate);
+
       pageTitle.textContent = state.headerTitle || "목표 & 기념일";
-      pageTitle.style.display = state.showHeaderTitle ? "block" : "none";
+      pageTitle.style.display = titleActive ? "block" : "none";
 
       const today = new Date();
       const days = ["일", "월", "화", "수", "목", "금", "토"];
       currentToday.textContent = `Today ${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')} (${days[today.getDay()]})`;
-      currentToday.style.display = state.showTodayDate ? "block" : "none";
+      currentToday.style.display = todayActive ? "block" : "none";
 
-      if (!state.showHeaderTitle && !state.showTodayDate) {
+      if (!headerAreaActive || (!titleActive && !todayActive)) {
         headerArea.style.display = "none";
       } else {
         headerArea.style.display = "flex";
@@ -1950,7 +1947,6 @@
             <div class="title-row">
               <span class="item-title">${escapeHtml(item.title)}</span>
               ${badgeInfo ? `<span class="badge" style="background-color: ${badgeInfo.bg}; color: ${badgeInfo.text};">${escapeHtml(badgeInfo.name)}</span>` : ""}
-              <span class="calc-mode-indicator" title="당일 계산 기준">${mode === 1 ? "+1 시작" : "+0 기준"}</span>
             </div>
             <div class="item-meta">
               <span>목표일: ${formatTargetDate(targetDate)}</span>
@@ -1986,6 +1982,7 @@
        ========================================================================== */
     function renderSettingsView() {
       applyFontScale();
+      renderUrlParamBanner();
 
       // 1. 글꼴 슬라이더 및 프리셋 버튼 상태
       const slider = document.getElementById("font-scale-slider");
@@ -1994,11 +1991,17 @@
       text.textContent = Math.round(state.fontSizeScale * 100) + "%";
       updatePresetButtonHighlight(state.fontSizeScale);
 
-      // 2. 제목 & 오늘 날짜 토글
-      document.getElementById("toggle-show-title").checked = state.showHeaderTitle;
+      // 2. 상단 헤더 및 세부 옵션 상태 렌더링
+      const headerAreaActive = state.showHeaderArea !== false;
+      const toggleShowHeader = document.getElementById("toggle-show-header");
+      const subOptions = document.getElementById("header-sub-options");
+      if (toggleShowHeader) toggleShowHeader.checked = headerAreaActive;
+      if (subOptions) subOptions.style.display = headerAreaActive ? "flex" : "none";
+
+      document.getElementById("toggle-show-title").checked = state.showHeaderTitle !== false;
       document.getElementById("input-header-title").value = state.headerTitle || "";
-      document.getElementById("toggle-show-today").checked = state.showTodayDate;
-      document.getElementById("title-text-group").style.display = state.showHeaderTitle ? "flex" : "none";
+      document.getElementById("toggle-show-today").checked = state.showTodayDate !== false;
+      document.getElementById("title-text-group").style.display = (headerAreaActive && state.showHeaderTitle !== false) ? "flex" : "none";
 
       // 3. 새 디데이 폼의 배지 선택 셀렉트박스 갱신
       renderBadgeSelectOptions();
@@ -2040,13 +2043,29 @@
       else if (Math.abs(scale - 1.30) < 0.02) presets[3]?.classList.add("active");
     }
 
-    /* --- 헤더 및 오늘 날짜 설정 --- */
+    /* --- 헤더 및 세부 옵션 설정 --- */
+    function onToggleHeaderArea() {
+      const isHeaderOn = document.getElementById("toggle-show-header").checked;
+      state.showHeaderArea = isHeaderOn;
+
+      const subOptions = document.getElementById("header-sub-options");
+      if (subOptions) {
+        subOptions.style.display = isHeaderOn ? "flex" : "none";
+      }
+
+
+      renderHeader();
+      saveState();
+      updateGeneratedUrl();
+    }
+
     function updateHeaderSettings() {
+      state.showHeaderArea = document.getElementById("toggle-show-header").checked;
       state.showHeaderTitle = document.getElementById("toggle-show-title").checked;
       state.headerTitle = document.getElementById("input-header-title").value.trim();
       state.showTodayDate = document.getElementById("toggle-show-today").checked;
 
-      document.getElementById("title-text-group").style.display = state.showHeaderTitle ? "flex" : "none";
+      document.getElementById("title-text-group").style.display = (state.showHeaderArea && state.showHeaderTitle) ? "flex" : "none";
       renderHeader();
       saveState();
       updateGeneratedUrl();
@@ -2421,71 +2440,20 @@
         });
       }
 
-      // 2. 새 디데이 폼의 스위치와 생성기 옵션 스위치 양방향 연동
-      const newTimer = document.getElementById("new-dday-timer");
-      const newPast = document.getElementById("new-dday-past");
-      const genTimer = document.getElementById("gen-opt-timer");
-      const genPast = document.getElementById("gen-opt-countpast");
-
-      if (newTimer && genTimer) {
-        newTimer.addEventListener("change", () => {
-          genTimer.checked = newTimer.checked;
-          updateGeneratedUrl();
-        });
-        genTimer.addEventListener("change", () => {
-          newTimer.checked = genTimer.checked;
-          updateGeneratedUrl();
-        });
-      }
-
-      if (newPast && genPast) {
-        newPast.addEventListener("change", () => {
-          genPast.checked = newPast.checked;
-          updateGeneratedUrl();
-        });
-        genPast.addEventListener("change", () => {
-          newPast.checked = genPast.checked;
-          updateGeneratedUrl();
-        });
-      }
-
-      // 3. 오늘 날짜 및 헤더 표시 스위치 동기화
+      // 오늘 날짜 스위치 변경 시 URL 생성기 자동 갱신
       const toggleShowToday = document.getElementById("toggle-show-today");
-      const genShowToday = document.getElementById("gen-opt-showtoday");
-      if (toggleShowToday && genShowToday) {
+      if (toggleShowToday) {
         toggleShowToday.addEventListener("change", () => {
-          genShowToday.checked = toggleShowToday.checked;
           updateGeneratedUrl();
         });
-        genShowToday.addEventListener("change", () => {
-          toggleShowToday.checked = genShowToday.checked;
-          updateHeaderSettings();
-        });
-        genShowToday.checked = state.showTodayDate !== false;
       }
 
-      const toggleShowTitle = document.getElementById("toggle-show-title");
-      const genHeader = document.getElementById("gen-opt-header");
-      if (toggleShowTitle && genHeader) {
-        toggleShowTitle.addEventListener("change", () => {
-          genHeader.checked = toggleShowTitle.checked;
+      // 상단 헤더 스위치 변경 시 URL 생성기 자동 갱신
+      const toggleShowHeader = document.getElementById("toggle-show-header");
+      if (toggleShowHeader) {
+        toggleShowHeader.addEventListener("change", () => {
           updateGeneratedUrl();
         });
-        genHeader.addEventListener("change", () => {
-          toggleShowTitle.checked = genHeader.checked;
-          updateHeaderSettings();
-        });
-        genHeader.checked = state.showHeaderTitle !== false;
-      }
-
-      // 기존 등록된 아이템들의 기본 상태 반영
-      if (state.items && state.items.length > 0) {
-        const hasTimer = state.items.some(it => it.showTimer !== false);
-        const hasPast = state.items.some(it => it.countPast !== false);
-        if (genTimer) genTimer.checked = hasTimer;
-        if (newTimer) newTimer.checked = hasTimer;
-        if (genPast) genPast.checked = hasPast;
-        if (newPast) newPast.checked = hasPast;
       }
 
       renderBadgeSelectOptions();
@@ -2563,36 +2531,24 @@
         params.set("scale", state.fontSizeScale.toFixed(2));
       }
 
-      // 부가 옵션 파라미터
-      const hideTabsChecked = document.getElementById("gen-opt-hidetabs")?.checked;
-      if (hideTabsChecked) {
+      // 부가 옵션 파라미터: 위젯 화면 모드 (드롭다운)
+      const viewMode = document.getElementById("gen-view-mode")?.value || "widget";
+      if (viewMode === "widget") {
         params.set("hideTabs", "1");
+      } else if (viewMode === "compact") {
+        params.set("compact", "1");
       }
 
-      const headerChecked = document.getElementById("gen-opt-header")?.checked;
-      if (!headerChecked) {
+      // 상단 헤더 표시: 상단 화면 설정의 상태를 URL에 직접 반영
+      if (state.showHeaderArea === false) {
         params.set("showHeader", "0");
       }
 
-      const showTodayChecked = document.getElementById("gen-opt-showtoday")?.checked;
-      if (showTodayChecked === false) {
+      // 오늘 날짜 표시: 상단 화면 설정의 상태를 URL에 직접 반영
+      if (state.showTodayDate === false) {
         params.set("showToday", "0");
       }
 
-      const timerChecked = document.getElementById("gen-opt-timer")?.checked;
-      if (timerChecked === false) {
-        params.set("timer", "0");
-      }
-
-      const countPastChecked = document.getElementById("gen-opt-countpast")?.checked;
-      if (countPastChecked === false) {
-        params.set("countPast", "0");
-      }
-
-      const compactChecked = document.getElementById("gen-opt-compact")?.checked;
-      if (compactChecked) {
-        params.set("compact", "1");
-      }
 
       const queryString = params.toString();
       const finalUrl = queryString ? `${baseUrl}?${queryString}` : baseUrl;
