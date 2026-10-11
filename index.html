@@ -78,124 +78,52 @@
       line-height: 1;
     }
 
-    /* 상단 네비게이션: 공간을 차지하지 않는 슬림 더보기(점 3개) 버튼 */
+    /* 하단 탭 네비게이션 (오른쪽 정렬 미니멀 아이콘 탭) */
     .tab-bar-wrap {
       display: flex;
       justify-content: flex-end;
       width: 100%;
-      position: relative;
-      margin-bottom: -10px;
-      height: 22px;
-      z-index: 200;
+      margin-top: 8px;
+      user-select: none;
     }
 
-    .more-menu-btn {
+    .tab-bar {
+      display: inline-flex;
+      background-color: var(--bg-subtle);
+      padding: 3px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      gap: 3px;
+      user-select: none;
+    }
+
+    .tab-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 22px;
+      width: 32px;
+      height: 28px;
       padding: 0;
-      border: 1px solid transparent;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 16px;
-      transition: all 0.15s ease;
-      line-height: 1;
-    }
-
-    .more-menu-btn:hover,
-    .more-menu-btn.active {
-      background-color: var(--bg-hover);
-      color: var(--text-main);
-      border-color: var(--border-color);
-    }
-
-    /* 더보기 터치 시 그 위로 뜨는 조그마한 팝업 모달 */
-    .nav-modal-backdrop {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 1040;
-      background: transparent;
-    }
-
-    .nav-modal-backdrop.show {
-      display: block;
-    }
-
-    .nav-modal {
-      position: absolute;
-      top: calc(100% + 4px);
-      right: 0;
-      width: 145px;
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      box-shadow: 0 4px 16px rgba(15, 15, 15, 0.12), 0 1px 3px rgba(15, 15, 15, 0.08);
-      padding: 4px;
-      z-index: 1050;
-      display: none;
-      flex-direction: column;
-      gap: 2px;
-      animation: fadeIn 0.15s ease;
-    }
-
-    .nav-modal.show {
-      display: flex;
-    }
-
-    .nav-modal-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      width: 100%;
-      padding: 7px 10px;
-      font-size: 0.85em;
-      font-weight: 500;
-      color: var(--text-main);
-      background: transparent;
+      font-size: 1.1em;
       border: none;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      text-align: left;
-      font-family: inherit;
-      transition: background-color 0.12s ease;
-    }
-
-    .nav-modal-item .ti {
-      font-size: 1.15em;
+      background: transparent;
       color: var(--text-muted);
+      border-radius: calc(var(--radius) - 2px);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
     }
 
-    .nav-modal-item:hover {
+    .tab-btn:hover {
+      color: var(--text-main);
       background-color: var(--bg-hover);
     }
 
-    .nav-modal-item.active {
-      background-color: var(--bg-subtle);
+    .tab-btn.active {
+      background-color: var(--bg-card);
+      color: var(--primary);
       font-weight: 600;
-      color: var(--primary);
-    }
-
-    .nav-modal-item.active .ti {
-      color: var(--primary);
-    }
-
-    .nav-modal-item .nav-check {
-      margin-left: auto;
-      font-size: 0.9em;
-      color: var(--primary);
-      opacity: 0;
-    }
-
-    .nav-modal-item.active .nav-check {
-      opacity: 1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
 
     .tab-view {
@@ -920,10 +848,10 @@
     .floating-settings-btn {
       display: none;
       position: fixed;
-      top: 10px;
+      bottom: 10px;
       right: 10px;
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       border: 1px solid var(--border-color);
       background-color: var(--bg-card);
@@ -932,7 +860,7 @@
       cursor: pointer;
       align-items: center;
       justify-content: center;
-      opacity: 0.25;
+      opacity: 0.2;
       transition: opacity 0.2s ease, transform 0.15s ease, background-color 0.15s;
       z-index: 1000;
       box-shadow: var(--shadow-sm);
@@ -948,6 +876,7 @@
     body.hide-tabs .floating-settings-btn {
       display: inline-flex;
     }
+
 
     /* URL 링크 생성기 UI */
     .url-preview-box {
@@ -1012,31 +941,6 @@
   </button>
 
   <div class="container">
-    <!-- 상단 네비게이션 (초슬림 더보기 점 3개 버튼 & 팝업 모달) -->
-    <div class="tab-bar-wrap">
-      <button type="button" class="more-menu-btn" id="more-menu-btn" onclick="toggleNavModal(event)"
-        title="더보기 (화면 전환)">
-        <i class="ti ti-dots"></i>
-      </button>
-
-      <!-- 모달 바깥 터치/클릭 시 닫기 위한 백드롭 -->
-      <div class="nav-modal-backdrop" id="nav-modal-backdrop" onclick="closeNavModal()"></div>
-
-      <!-- 상단 더보기 팝업 모달 -->
-      <div class="nav-modal" id="nav-modal">
-        <button type="button" class="nav-modal-item active" id="nav-item-dday" onclick="selectNavTab('dday')">
-          <i class="ti ti-calendar"></i>
-          <span>디데이 목록</span>
-          <i class="ti ti-check nav-check" id="nav-check-dday"></i>
-        </button>
-        <button type="button" class="nav-modal-item" id="nav-item-settings" onclick="selectNavTab('settings')">
-          <i class="ti ti-settings"></i>
-          <span>환경 설정</span>
-          <i class="ti ti-check nav-check" id="nav-check-settings"></i>
-        </button>
-      </div>
-    </div>
-
     <!-- [탭 1] 디데이 목록 화면 -->
     <main class="tab-view active" id="view-dday">
       <!-- 헤더 (설정 탭에서 표시/숨김 및 타이틀 수정 가능) -->
@@ -1203,14 +1107,13 @@
           </select>
         </div>
 
-        <!-- 부가 옵션: 상단 탭 바 숨김 (토글) -->
+        <!-- 부가 옵션: 하단 탭 바 숨김 (토글) -->
         <div class="setting-row" style="margin-top: 10px; margin-bottom: 12px; align-items: flex-start;">
           <div class="setting-label-group">
-            <span class="setting-label">상단 탭 바 숨김 (위젯 전용 모드)</span>
+            <span class="setting-label">하단 탭 바 숨김 (위젯 전용 모드)</span>
             <span class="setting-subtext" style="line-height: 1.45;">
-              노션 임베드 시 상단 탭(디데이 / 설정)을 숨겨 깔끔한 위젯으로 표시합니다.<br />
-              <span style="color: var(--danger); font-weight: 500;">⚠️ 이 토글을 적용하여 상단 탭을 비활성화(숨김)하면 설정 화면이 사라져 디데이를 변경할 수
-                없습니다.</span>
+              노션 임베드 시 하단 탭(디데이 / 설정)을 숨겨 깔끔한 위젯으로 표시합니다.<br />
+              <span style="color: var(--danger); font-weight: 500;">⚠️ 이 토글을 적용하여 하단 탭을 비활성화(숨김)하면 설정 화면이 사라져 디데이를 변경할 수 없습니다.</span>
             </span>
           </div>
           <label class="switch" style="margin-top: 2px;">
@@ -1357,6 +1260,18 @@
       </div>
 
     </aside>
+
+    <!-- [하단 탭 네비게이션] 화면 전환 (디데이 목록 / 환경 설정) -->
+    <div class="tab-bar-wrap">
+      <nav class="tab-bar" aria-label="화면 전환">
+        <button type="button" class="tab-btn active" id="tab-btn-dday" onclick="switchTab('dday')" title="디데이 목록">
+          <i class="ti ti-calendar"></i>
+        </button>
+        <button type="button" class="tab-btn" id="tab-btn-settings" onclick="switchTab('settings')" title="환경 설정">
+          <i class="ti ti-settings"></i>
+        </button>
+      </nav>
+    </div>
   </div>
 
   <!-- 토스트 알림 컨테이너 -->
@@ -1554,6 +1469,7 @@
       switchTab("settings");
       showToast("설정 화면으로 전환되었습니다.");
     }
+
 
     /* ==========================================================================
        [2-1. URL 파라미터 분기 파서 및 적용 엔진]
@@ -1914,62 +1830,14 @@
     /* ==========================================================================
        [3. 탭 전환 UX & 상단 더보기 팝업 모달]
        ========================================================================== */
-    let currentActiveTab = "dday";
-
-    function toggleNavModal(event) {
-      if (event) {
-        event.stopPropagation();
-      }
-      const modal = document.getElementById("nav-modal");
-      const backdrop = document.getElementById("nav-modal-backdrop");
-      const btn = document.getElementById("more-menu-btn");
-      if (!modal) return;
-
-      const isShowing = modal.classList.contains("show");
-      if (isShowing) {
-        closeNavModal();
-      } else {
-        modal.classList.add("show");
-        if (backdrop) backdrop.classList.add("show");
-        if (btn) btn.classList.add("active");
-      }
-    }
-
-    function closeNavModal() {
-      const modal = document.getElementById("nav-modal");
-      const backdrop = document.getElementById("nav-modal-backdrop");
-      const btn = document.getElementById("more-menu-btn");
-      if (modal) modal.classList.remove("show");
-      if (backdrop) backdrop.classList.remove("show");
-      if (btn) btn.classList.remove("active");
-    }
-
-    function selectNavTab(tabName) {
-      switchTab(tabName);
-      closeNavModal();
-    }
-
-    // 모달 외부 클릭 시 닫기
-    document.addEventListener("click", (e) => {
-      const modal = document.getElementById("nav-modal");
-      const btn = document.getElementById("more-menu-btn");
-      if (modal && modal.classList.contains("show")) {
-        if (!modal.contains(e.target) && !btn.contains(e.target)) {
-          closeNavModal();
-        }
-      }
-    });
-
     function switchTab(tabName) {
-      currentActiveTab = tabName;
       const ddayView = document.getElementById("view-dday");
       const settingsView = document.getElementById("view-settings");
+      const ddayBtn = document.getElementById("tab-btn-dday");
+      const settingsBtn = document.getElementById("tab-btn-settings");
 
-      // 팝업 모달 항목 상태 동기화
-      const itemDday = document.getElementById("nav-item-dday");
-      const itemSettings = document.getElementById("nav-item-settings");
-      if (itemDday) itemDday.classList.toggle("active", tabName === "dday");
-      if (itemSettings) itemSettings.classList.toggle("active", tabName === "settings");
+      if (ddayBtn) ddayBtn.classList.toggle("active", tabName === "dday");
+      if (settingsBtn) settingsBtn.classList.toggle("active", tabName === "settings");
 
       if (tabName === "dday") {
         ddayView.classList.add("active");
@@ -2110,7 +1978,7 @@
         listContainer.innerHTML = `
           <div class="empty-state">
             등록된 디데이가 없습니다.<br />
-            우측 상단 <b>더보기 메뉴 (<i class="ti ti-dots"></i>) > 환경 설정</b>에서 새로운 디데이를 추가해보세요!
+            하단 <b>환경 설정 (<i class="ti ti-settings"></i>)</b> 탭에서 새로운 디데이를 추가해보세요!
           </div>
         `;
         return;
@@ -2720,7 +2588,7 @@
         params.set("compact", "1");
       }
 
-      // 부가 옵션 파라미터: 상단 탭 바 숨김 (토글)
+      // 부가 옵션 파라미터: 하단 탭 바 숨김 (토글)
       const hideTabsChecked = document.getElementById("gen-opt-hidetabs")?.checked;
       if (hideTabsChecked) {
         params.set("hideTabs", "1");
