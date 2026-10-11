@@ -1,0 +1,9 @@
+# 백업 데이터 파일
+items-backup.json
+
+# OS 및 에디터 임시 파일
+.DS_Store
+Thumbs.db
+*.tmp
+.vscode/
+.idea/
