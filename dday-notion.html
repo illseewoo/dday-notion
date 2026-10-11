@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notion D-Day Widget</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    :root {
+      --bg-page: #ffffff;
+      --bg-card: #fbfbfa;
+      --text-main: #37352f;
+      --text-muted: #787774;
+      --text-faint: #9b9a97;
+      --border-color: #e9e9e7;
+      --border-hover: #d3d3d0;
+      --radius: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* 헤더 및 컨트롤 버튼 */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .btn-toggle-add {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 4px 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-toggle-add:hover {
+      background-color: var(--bg-card);
+      color: var(--text-main);
+      border-color: var(--border-hover);
+    }
+
+    /* 새 디데이 추가 패널 (토글형) */
+    .add-panel {
+      display: none;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 12px;
+      gap: 8px;
+      flex-direction: column;
+    }
+
+    .add-panel.open {
+      display: flex;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .input-field {
+      padding: 6px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--text-main);
+      outline: none;
+      background-color: #ffffff;
+      flex: 1;
+    }
+
+    .input-field:focus {
+      border-color: var(--text-main);
+    }
+
+    .btn-submit {
+      background-color: var(--text-main);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-submit:hover {
+      opacity: 0.9;
+    }
+
+    /* 디데이 목록 */
+    .dday-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dday-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      group: card;
+    }
+
+    .dday-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .info-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .item-title-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .item-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .item-target-date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .counter-wrap {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .dday-tag {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--text-faint);
+      font-size: 11px;
+      cursor: pointer;
+      margin-top: 2px;
+      padding: 2px 4px;
+    }
+
+    .btn-delete:hover {
+      color: #eb5757;
+    }
+
+    .empty-state {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 24px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <span class="header-title">D-Day</span>
+      <button type="button" class="btn-toggle-add" id="btn-toggle">+ 디데이 추가</button>
+    </div>
+
+    <!-- 추가 인라인 패널 -->
+    <div class="add-panel" id="add-panel">
+      <div class="input-row">
+        <input type="text" id="input-title" class="input-field" placeholder="목표 또는 기념일 이름" />
+      </div>
+      <div class="input-row">
+        <input type="date" id="input-date" class="input-field" />
+        <button type="button" class="btn-submit" id="btn-add">추가</button>
+      </div>
+    </div>
+
+    <!-- 디데이 카드 목록 -->
+    <div class="dday-list" id="dday-list"></div>
+  </div>
+
+  <script>
+    // 노션 Sandbox에서 localStorage 에러 방지를 위한 SafeStorage Wrapper
+    const safeStorage = {
+      getItem(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          return window.__inMemoryFallback ? window.__inMemoryFallback[key] : null;
+        }
+      },
+      setItem(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {
+          if (!window.__inMemoryFallback) window.__inMemoryFallback = {};
+          window.__inMemoryFallback[key] = value;
+        }
+      }
+    };
+
+    // 초기 데이터
+    const STORAGE_KEY = "notion_dday_data_v1";
+    let items = [];
+
+    try {
+      const saved = safeStorage.getItem(STORAGE_KEY);
+      items = saved ? JSON.parse(saved) : [
+        { id: "1", title: "프로젝트 런칭", target: "2026-12-31" }
+      ];
+    } catch (e) {
+      items = [{ id: "1", title: "프로젝트 런칭", target: "2026-12-31" }];
+    }
+
+    function saveItems() {
+      safeStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }
+
+    function calculateDDay(targetDateStr) {
+      const now = new Date();
+      const target = new Date(targetDateStr);
+      
+      const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+      const dayDiff = Math.round((targetMidnight - nowMidnight) / (1000 * 60 * 60 * 24));
+
+      if (dayDiff === 0) return "D-Day";
+      if (dayDiff > 0) return `D-${dayDiff}`;
+      return `D+${Math.abs(dayDiff)}`;
+    }
+
+    function render() {
+      const listContainer = document.getElementById("dday-list");
+      listContainer.innerHTML = "";
+
+      if (items.length === 0) {
+        listContainer.innerHTML = `<div class="empty-state">등록된 디데이가 없습니다. 상단 + 버튼을 눌러 추가해 보세요.</div>`;
+        return;
+      }
+
+      items.forEach((item) => {
+        const ddayText = calculateDDay(item.target);
+        const card = document.createElement("div");
+        card.className = "dday-card";
+        card.innerHTML = `
+          <div class="info-wrap">
+            <div class="item-title-row">
+              <span class="item-title">${item.title}</span>
+            </div>
+            <span class="item-target-date">${item.target}</span>
+          </div>
+          <div class="counter-wrap">
+            <div class="dday-tag">${ddayText}</div>
+            <button type="button" class="btn-delete" data-id="${item.id}">삭제</button>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+
+      // 삭제 버튼 이벤트 바인딩
+      document.querySelectorAll(".btn-delete").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const id = e.target.getAttribute("data-id");
+          items = items.filter((it) => it.id !== id);
+          saveItems();
+          render();
+        });
+      });
+    }
+
+    // 패널 토글 동작
+    const btnToggle = document.getElementById("btn-toggle");
+    const addPanel = document.getElementById("add-panel");
+    btnToggle.addEventListener("click", () => {
+      addPanel.classList.toggle("open");
+    });
+
+    // 항목 추가 동작 (form submit 대신 독립 button click 이벤트)
+    const btnAdd = document.getElementById("btn-add");
+    const inputTitle = document.getElementById("input-title");
+    const inputDate = document.getElementById("input-date");
+
+    btnAdd.addEventListener("click", () => {
+      const title = inputTitle.value.trim();
+      const date = inputDate.value;
+
+      if (!title || !date) {
+        alert("제목과 날짜를 모두 입력해 주세요.");
+        return;
+      }
+
+      items.push({
+        id: Date.now().toString(),
+        title: title,
+        target: date
+      });
+
+      saveItems();
+      render();
+
+      // 인풋 초기화 및 닫기
+      inputTitle.value = "";
+      inputDate.value = "";
+      addPanel.classList.remove("open");
+    });
+
+    // 초기 실행
+    render();
+  </script>
+</body>
+</html>
