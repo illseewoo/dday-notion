@@ -1074,14 +1074,28 @@
             <code>제목:날짜:배지명:1</code>(+1모드) 지원</span>
         </div>
 
-        <!-- 부가 옵션: 위젯 화면 모드 (드롭다운) & 스위치들 -->
+        <!-- 부가 옵션: 화면 여백 스타일 (드롭다운) -->
         <div class="form-group">
-          <label class="form-label" for="gen-view-mode">위젯 화면 모드 (탭 및 여백 선택)</label>
-          <select id="gen-view-mode" class="input-select" onchange="updateGeneratedUrl()">
-            <option value="widget" selected>일반 위젯 모드 (탭 숨김 + 기본 넉넉한 여백 / 노션 본문용)</option>
-            <option value="compact">컴팩트 위젯 모드 (탭 숨김 + 좁은 여백 / 사이드바 & 2·3단 컬럼용)</option>
-            <option value="full">전체 화면 모드 (탭 노출 + 기본 여백 / 일반 브라우저 직접 사용용)</option>
+          <label class="form-label" for="gen-padding-mode">화면 여백 스타일</label>
+          <select id="gen-padding-mode" class="input-select" onchange="updateGeneratedUrl()">
+            <option value="default" selected>기본 여백 (넉넉한 기본 여백 / 노션 본문 임베드용)</option>
+            <option value="compact">컴팩트 여백 (좁은 여백 / 사이드바 & 2·3단 컬럼용)</option>
           </select>
+        </div>
+
+        <!-- 부가 옵션: 상단 탭 바 숨김 (토글) -->
+        <div class="setting-row" style="margin-top: 10px; margin-bottom: 12px; align-items: flex-start;">
+          <div class="setting-label-group">
+            <span class="setting-label">상단 탭 바 숨김 (위젯 전용 모드)</span>
+            <span class="setting-subtext" style="line-height: 1.45;">
+              노션 임베드 시 상단 탭(디데이 / 설정)을 숨겨 깔끔한 위젯으로 표시합니다.<br />
+              <span style="color: var(--danger); font-weight: 500;">⚠️ 이 토글을 적용하여 상단 탭을 비활성화(숨김)하면 설정 화면이 사라져 디데이를 변경할 수 없습니다.</span>
+            </span>
+          </div>
+          <label class="switch" style="margin-top: 2px;">
+            <input type="checkbox" id="gen-opt-hidetabs" checked onchange="updateGeneratedUrl()" />
+            <span class="slider"></span>
+          </label>
         </div>
 
 
@@ -1754,7 +1768,7 @@
       // 7. 노션 위젯 임베드 전용 뷰 모드 (?hideTabs=1, ?compact=1, ?widget=1)
       const hideTabsParam = params.get("hideTabs") || params.get("noTabs") || params.get("widget");
       const compactParam = params.get("compact");
-      if (hideTabsParam === "1" || hideTabsParam === "true" || compactParam === "1" || compactParam === "true") {
+      if (hideTabsParam === "1" || hideTabsParam === "true") {
         document.body.classList.add("hide-tabs");
       }
       if (compactParam === "1" || compactParam === "true") {
@@ -2531,12 +2545,16 @@
         params.set("scale", state.fontSizeScale.toFixed(2));
       }
 
-      // 부가 옵션 파라미터: 위젯 화면 모드 (드롭다운)
-      const viewMode = document.getElementById("gen-view-mode")?.value || "widget";
-      if (viewMode === "widget") {
-        params.set("hideTabs", "1");
-      } else if (viewMode === "compact") {
+      // 부가 옵션 파라미터: 화면 여백 스타일 (드롭다운)
+      const paddingMode = document.getElementById("gen-padding-mode")?.value || "default";
+      if (paddingMode === "compact") {
         params.set("compact", "1");
+      }
+
+      // 부가 옵션 파라미터: 상단 탭 바 숨김 (토글)
+      const hideTabsChecked = document.getElementById("gen-opt-hidetabs")?.checked;
+      if (hideTabsChecked) {
+        params.set("hideTabs", "1");
       }
 
       // 상단 헤더 표시: 상단 화면 설정의 상태를 URL에 직접 반영
