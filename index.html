@@ -990,6 +990,46 @@
               <span class="slider"></span>
             </label>
           </div>
+          <div class="setting-row">
+            <div class="setting-label-group">
+              <span class="setting-label">오늘 날짜 표시 (Today)</span>
+              <span class="setting-subtext">헤더 우측 실시간 오늘 날짜</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="gen-opt-showtoday" checked onchange="updateGeneratedUrl()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label-group">
+              <span class="setting-label">실시간 타이머</span>
+              <span class="setting-subtext">초 단위 카운트다운 노출</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="gen-opt-timer" checked onchange="updateGeneratedUrl()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label-group">
+              <span class="setting-label">지난 날짜 카운트업</span>
+              <span class="setting-subtext">경과 시 +N일 누적 (OFF: 완료 표시)</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="gen-opt-countpast" checked onchange="updateGeneratedUrl()" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label-group">
+              <span class="setting-label">컴팩트 여백 모드</span>
+              <span class="setting-subtext">노션 사이드바 및 좁은 블록용</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="gen-opt-compact" onchange="updateGeneratedUrl()" />
+              <span class="slider"></span>
+            </label>
+          </div>
         </div>
 
         <!-- 결과 URL 표시 및 복사 -->
@@ -1381,11 +1421,17 @@
       if (!items || items.length === 0) return "";
       return items.map(item => {
         const badge = badges ? badges.find(b => b.id === item.badgeId) : null;
-        const badgeName = badge ? badge.name : "";
+        // 배지명과 색상을 함께 보존 (예: 기획^blue)
+        const badgeName = badge ? (badge.color ? `${badge.name}^${badge.color}` : badge.name) : "";
         const mode = item.dayCountMode === 1 ? "1" : "0";
+        const timer = item.showTimer === false ? "0" : "1";
+        const countPast = item.countPast === false ? "0" : "1";
 
-        if (mode === "1") {
-          return `${item.title}:${item.target}:${badgeName}:1`;
+        // 타이머나 카운트업이 0(OFF)인 경우 명시적 6개 토큰 형식 사용
+        if (timer === "0" || countPast === "0") {
+          return `${item.title}:${item.target}:${badgeName || ""}:${mode}:${timer}:${countPast}`;
+        } else if (mode === "1") {
+          return `${item.title}:${item.target}:${badgeName || ""}:1`;
         } else if (badgeName) {
           return `${item.title}:${item.target}:${badgeName}`;
         } else {
@@ -1413,6 +1459,20 @@
         return;
       }
 
+      // 0. 실시간 타이머 및 지난 날짜 카운트업 전역 파라미터 (?timer=0, ?countPast=0)
+      const timerParam = params.get("timer") ?? params.get("showTimer") ?? params.get("liveTimer");
+      const countPastParam = params.get("countPast") ?? params.get("countUp") ?? params.get("past");
+
+      let globalTimer = null;
+      if (timerParam !== null) {
+        globalTimer = timerParam !== "0" && timerParam !== "false" && timerParam !== "off";
+      }
+
+      let globalCountPast = null;
+      if (countPastParam !== null) {
+        globalCountPast = countPastParam !== "0" && countPastParam !== "false" && countPastParam !== "off";
+      }
+
       // 1. 사전 정의 프리셋 분기 (?preset=... 또는 ?type=...)
       const presetParam = params.get("preset") || params.get("type");
       if (presetParam) {
@@ -1434,7 +1494,7 @@
 
       // 2. 직접 입력 양식 파라미터 분기 (?items=... 또는 ?i=... 또는 다중 ?item=...)
       // 형식 예: ?items=시험:2026-11-15,종강:2026-12-20
-      // 세부 형식: 제목:날짜:배지명:계산모드(0또는1)
+      // 세부 형식: 제목:날짜:배지명:계산모드(0또는1):타이머(0또는1):카운트업(0또는1)
       const rawItems = params.get("items") || params.get("i") || params.getAll("item");
       let itemsList = [];
       if (typeof rawItems === "string") {
@@ -1454,17 +1514,37 @@
           const title = parts[0]?.trim();
           const rawTarget = parts[1]?.trim();
           const target = normalizeDateString(rawTarget);
-          const badgeName = parts[2]?.trim();
+          const rawBadgeToken = parts[2]?.trim();
+          let badgeName = rawBadgeToken;
+          let badgeColor = null;
+          if (rawBadgeToken && rawBadgeToken.includes("^")) {
+            const bParts = rawBadgeToken.split("^");
+            badgeName = bParts[0]?.trim();
+            badgeColor = bParts[1]?.trim();
+          }
+
           const rawMode = parts[3]?.trim();
           const mode = (rawMode === "1" || rawMode === "+1") ? 1 : 0;
+          const rawTimer = parts[4]?.trim();
+          const rawCountPast = parts[5]?.trim();
+
+          const itemTimer = (rawTimer !== undefined && rawTimer !== "")
+            ? (rawTimer === "1" || rawTimer === "true" || rawTimer === "on")
+            : (globalTimer !== null ? globalTimer : true);
+
+          const itemCountPast = (rawCountPast !== undefined && rawCountPast !== "")
+            ? (rawCountPast === "1" || rawCountPast === "true" || rawCountPast === "on")
+            : (globalCountPast !== null ? globalCountPast : true);
 
           if (title && target) {
             let badgeId = null;
             if (badgeName) {
-              let foundBadge = state.badges.find(b => b.name === badgeName);
+              let foundBadge = state.badges.find(b => b.name.toLowerCase() === badgeName.toLowerCase());
               if (!foundBadge) {
                 badgeId = "b_url_" + idx;
-                const assignedColor = colorKeys[colorIdx % colorKeys.length];
+                const assignedColor = (badgeColor && NOTION_COLORS[badgeColor])
+                  ? badgeColor
+                  : colorKeys[colorIdx % colorKeys.length];
                 colorIdx++;
                 foundBadge = { id: badgeId, name: badgeName, color: assignedColor };
                 state.badges.push(foundBadge);
@@ -1479,8 +1559,8 @@
               target,
               badgeId,
               dayCountMode: mode,
-              showTimer: true,
-              countPast: true
+              showTimer: itemTimer,
+              countPast: itemCountPast
             });
           }
         });
@@ -1517,8 +1597,8 @@
           target,
           badgeId,
           dayCountMode: mode,
-          showTimer: true,
-          countPast: true
+          showTimer: globalTimer !== null ? globalTimer : true,
+          countPast: globalCountPast !== null ? globalCountPast : true
         }];
         urlParamInfo.isActive = true;
         urlParamInfo.filterType = "custom";
@@ -1543,7 +1623,30 @@
         }
       }
 
-      // 4. 헤더 타이틀 및 표시 옵션 오버라이드
+      // 4. 전역 타이머 및 카운트업 오버라이드 적용 (프리셋/배지/단일/기본 모든 항목 대상)
+      if (globalTimer !== null) {
+        state.items.forEach(it => { it.showTimer = globalTimer; });
+        urlParamInfo.isActive = true;
+      }
+      if (globalCountPast !== null) {
+        state.items.forEach(it => { it.countPast = globalCountPast; });
+        urlParamInfo.isActive = true;
+      }
+
+      // 상태 설명에 옵션 표시 추가
+      const extraOptions = [];
+      if (globalTimer === false) extraOptions.push("타이머 OFF");
+      else if (globalTimer === true) extraOptions.push("타이머 ON");
+      if (globalCountPast === false) extraOptions.push("카운트업 OFF");
+      else if (globalCountPast === true) extraOptions.push("카운트업 ON");
+
+      if (extraOptions.length > 0) {
+        urlParamInfo.description = urlParamInfo.description
+          ? `${urlParamInfo.description} | ${extraOptions.join(", ")}`
+          : extraOptions.join(", ");
+      }
+
+      // 5. 헤더 타이틀 및 표시 옵션 오버라이드
       const headerTitle = params.get("header") || params.get("headerTitle") || params.get("h");
       if (headerTitle) {
         state.headerTitle = headerTitle;
@@ -1559,7 +1662,7 @@
         state.showTodayDate = showToday !== "0" && showToday !== "false";
       }
 
-      // 5. 글꼴 배율 (?scale=1.1 또는 ?scale=110 또는 ?font=1.1)
+      // 6. 글꼴 배율 (?scale=1.1 또는 ?scale=110 또는 ?font=1.1)
       const scaleParam = params.get("scale") || params.get("font");
       if (scaleParam) {
         let val = parseFloat(scaleParam);
@@ -1569,7 +1672,7 @@
         }
       }
 
-      // 6. 노션 위젯 임베드 전용 뷰 모드 (?hideTabs=1, ?compact=1, ?widget=1)
+      // 7. 노션 위젯 임베드 전용 뷰 모드 (?hideTabs=1, ?compact=1, ?widget=1)
       const hideTabsParam = params.get("hideTabs") || params.get("noTabs") || params.get("widget");
       const compactParam = params.get("compact");
       if (hideTabsParam === "1" || hideTabsParam === "true" || compactParam === "1" || compactParam === "true") {
@@ -1647,7 +1750,8 @@
 
       // 초 단위 실시간 계산
       const diffMs = target.getTime() - now.getTime();
-      const isPast = diffMs < 0;
+      const hasTimeSpecified = Boolean(parts[3]);
+      const isPast = hasTimeSpecified ? diffMs < 0 : dayDiff < 0;
 
       let ddayText = "";
       if (dayDiff > 0) {
@@ -1829,6 +1933,7 @@
       updatePresetButtonHighlight(state.fontSizeScale);
       applyFontScale();
       saveState();
+      updateGeneratedUrl();
     }
 
     function onFontSliderInput(val) {
@@ -1837,6 +1942,7 @@
       updatePresetButtonHighlight(state.fontSizeScale);
       applyFontScale();
       saveState();
+      updateGeneratedUrl();
     }
 
     function updatePresetButtonHighlight(scale) {
@@ -1857,6 +1963,7 @@
       document.getElementById("title-text-group").style.display = state.showHeaderTitle ? "flex" : "none";
       renderHeader();
       saveState();
+      updateGeneratedUrl();
     }
 
     /* --- 새 디데이 추가 --- */
@@ -1899,6 +2006,7 @@
       setNewDDayMode(0);
 
       renderManageDDayList();
+      updateGeneratedUrl();
       showToast("새 디데이가 추가되었습니다!");
     }
 
@@ -1909,6 +2017,7 @@
         item.dayCountMode = newMode;
         saveState();
         renderManageDDayList();
+        updateGeneratedUrl();
         showToast(`계산 방식이 [${newMode === 1 ? "+1 (1일차 시작)" : "+0 (당일 D-Day)"}] 로 변경되었습니다.`);
       }
     }
@@ -1921,6 +2030,7 @@
       state.items[newIndex] = temp;
       saveState();
       renderManageDDayList();
+      updateGeneratedUrl();
     }
 
     function deleteDDay(itemId) {
@@ -1930,7 +2040,30 @@
         state.items = state.items.filter(it => it.id !== itemId);
         saveState();
         renderManageDDayList();
+        updateGeneratedUrl();
         showToast("디데이가 삭제되었습니다.");
+      }
+    }
+
+    function toggleDDayTimer(itemId) {
+      const item = state.items.find(it => it.id === itemId);
+      if (item) {
+        item.showTimer = item.showTimer === false ? true : false;
+        saveState();
+        renderManageDDayList();
+        updateGeneratedUrl();
+        showToast(`'${item.title}' 타이머: ${item.showTimer ? "ON" : "OFF"}`);
+      }
+    }
+
+    function toggleDDayCountPast(itemId) {
+      const item = state.items.find(it => it.id === itemId);
+      if (item) {
+        item.countPast = item.countPast === false ? true : false;
+        saveState();
+        renderManageDDayList();
+        updateGeneratedUrl();
+        showToast(`'${item.title}' 카운트업: ${item.countPast ? "ON" : "OFF"}`);
       }
     }
 
@@ -1946,6 +2079,9 @@
       state.items.forEach((item, index) => {
         const badgeInfo = getBadgeInfo(item.badgeId);
         const mode = item.dayCountMode ?? 0;
+        const timerActive = item.showTimer !== false;
+        const pastActive = item.countPast !== false;
+
         const itemEl = document.createElement("div");
         itemEl.className = "manage-item";
         itemEl.innerHTML = `
@@ -1959,8 +2095,14 @@
 
           <!-- +0 vs +1 즉시 선택 토글러 -->
           <div class="mode-toggle-group">
-            <button type="button" class="mode-btn ${mode === 0 ? "active" : ""}" onclick="toggleDDayMode('${item.id}', 0)">+0</button>
-            <button type="button" class="mode-btn ${mode === 1 ? "active" : ""}" onclick="toggleDDayMode('${item.id}', 1)">+1</button>
+            <button type="button" class="mode-btn ${mode === 0 ? "active" : ""}" onclick="toggleDDayMode('${item.id}', 0)" title="당일 D-Day, 다음날 D+1">+0</button>
+            <button type="button" class="mode-btn ${mode === 1 ? "active" : ""}" onclick="toggleDDayMode('${item.id}', 1)" title="당일 D+1, 1일차 시작">+1</button>
+          </div>
+
+          <!-- 실시간 타이머 및 카운트업 토글러 -->
+          <div class="mode-toggle-group">
+            <button type="button" class="mode-btn ${timerActive ? "active" : ""}" onclick="toggleDDayTimer('${item.id}')" title="초 단위 실시간 타이머 노출 여부">⏱️ ${timerActive ? "ON" : "OFF"}</button>
+            <button type="button" class="mode-btn ${pastActive ? "active" : ""}" onclick="toggleDDayCountPast('${item.id}')" title="경과 후 D+N 누적 여부 (OFF: 완료 표시)">📈 ${pastActive ? "ON" : "OFF"}</button>
           </div>
 
           <!-- 순서 변경 및 삭제 버튼 -->
@@ -2052,6 +2194,73 @@
         });
       }
 
+      // 2. 새 디데이 폼의 스위치와 생성기 옵션 스위치 양방향 연동
+      const newTimer = document.getElementById("new-dday-timer");
+      const newPast = document.getElementById("new-dday-past");
+      const genTimer = document.getElementById("gen-opt-timer");
+      const genPast = document.getElementById("gen-opt-countpast");
+
+      if (newTimer && genTimer) {
+        newTimer.addEventListener("change", () => {
+          genTimer.checked = newTimer.checked;
+          updateGeneratedUrl();
+        });
+        genTimer.addEventListener("change", () => {
+          newTimer.checked = genTimer.checked;
+          updateGeneratedUrl();
+        });
+      }
+
+      if (newPast && genPast) {
+        newPast.addEventListener("change", () => {
+          genPast.checked = newPast.checked;
+          updateGeneratedUrl();
+        });
+        genPast.addEventListener("change", () => {
+          newPast.checked = genPast.checked;
+          updateGeneratedUrl();
+        });
+      }
+
+      // 3. 오늘 날짜 및 헤더 표시 스위치 동기화
+      const toggleShowToday = document.getElementById("toggle-show-today");
+      const genShowToday = document.getElementById("gen-opt-showtoday");
+      if (toggleShowToday && genShowToday) {
+        toggleShowToday.addEventListener("change", () => {
+          genShowToday.checked = toggleShowToday.checked;
+          updateGeneratedUrl();
+        });
+        genShowToday.addEventListener("change", () => {
+          toggleShowToday.checked = genShowToday.checked;
+          updateHeaderSettings();
+        });
+        genShowToday.checked = state.showTodayDate !== false;
+      }
+
+      const toggleShowTitle = document.getElementById("toggle-show-title");
+      const genHeader = document.getElementById("gen-opt-header");
+      if (toggleShowTitle && genHeader) {
+        toggleShowTitle.addEventListener("change", () => {
+          genHeader.checked = toggleShowTitle.checked;
+          updateGeneratedUrl();
+        });
+        genHeader.addEventListener("change", () => {
+          toggleShowTitle.checked = genHeader.checked;
+          updateHeaderSettings();
+        });
+        genHeader.checked = state.showHeaderTitle !== false;
+      }
+
+      // 기존 등록된 아이템들의 기본 상태 반영
+      if (state.items && state.items.length > 0) {
+        const hasTimer = state.items.some(it => it.showTimer !== false);
+        const hasPast = state.items.some(it => it.countPast !== false);
+        if (genTimer) genTimer.checked = hasTimer;
+        if (newTimer) newTimer.checked = hasTimer;
+        if (genPast) genPast.checked = hasPast;
+        if (newPast) newPast.checked = hasPast;
+      }
+
       renderBadgeSelectOptions();
       updateGeneratedUrl();
     }
@@ -2089,9 +2298,6 @@
         } else {
           params.set("items", "목표:2026-12-31");
         }
-        if (state.headerTitle && state.headerTitle !== DEFAULT_CONFIG.headerTitle) {
-          params.set("header", state.headerTitle);
-        }
       } else if (currentGenType === "preset") {
         params.set("preset", selectedGenPresetKey);
       } else if (currentGenType === "badge") {
@@ -2099,6 +2305,14 @@
         const selectedBadgeName = badgeSelect ? badgeSelect.value : "";
         if (selectedBadgeName) {
           params.set("badge", selectedBadgeName);
+          // 배지에 해당하는 현재 디데이 항목들을 함께 직렬화하여 다른 기기/노션에서도 온전히 노출되도록 보장
+          const matchedItems = state.items.filter(it => {
+            const b = state.badges.find(bg => bg.id === it.badgeId);
+            return b && b.name.toLowerCase() === selectedBadgeName.toLowerCase();
+          });
+          if (matchedItems.length > 0) {
+            params.set("items", serializeItemsToUrlParams(matchedItems, state.badges));
+          }
         } else if (state.badges[0]) {
           params.set("badge", state.badges[0].name);
         }
@@ -2112,6 +2326,16 @@
         }
       }
 
+      // 커스텀 헤더 제목
+      if (state.headerTitle && state.headerTitle !== DEFAULT_CONFIG.headerTitle && currentGenType !== "preset") {
+        params.set("header", state.headerTitle);
+      }
+
+      // 글꼴 배율 (기본 1.0이 아닐 때)
+      if (state.fontSizeScale && Math.abs(state.fontSizeScale - 1.0) > 0.01) {
+        params.set("scale", state.fontSizeScale.toFixed(2));
+      }
+
       // 부가 옵션 파라미터
       const hideTabsChecked = document.getElementById("gen-opt-hidetabs")?.checked;
       if (hideTabsChecked) {
@@ -2121,6 +2345,26 @@
       const headerChecked = document.getElementById("gen-opt-header")?.checked;
       if (!headerChecked) {
         params.set("showHeader", "0");
+      }
+
+      const showTodayChecked = document.getElementById("gen-opt-showtoday")?.checked;
+      if (showTodayChecked === false) {
+        params.set("showToday", "0");
+      }
+
+      const timerChecked = document.getElementById("gen-opt-timer")?.checked;
+      if (timerChecked === false) {
+        params.set("timer", "0");
+      }
+
+      const countPastChecked = document.getElementById("gen-opt-countpast")?.checked;
+      if (countPastChecked === false) {
+        params.set("countPast", "0");
+      }
+
+      const compactChecked = document.getElementById("gen-opt-compact")?.checked;
+      if (compactChecked) {
+        params.set("compact", "1");
       }
 
       const queryString = params.toString();
@@ -2200,6 +2444,7 @@
 
       renderBadgeChips();
       renderBadgeSelectOptions();
+      updateGeneratedUrl();
       showToast(`'${name}' 배지가 추가되었습니다.`);
     }
 
@@ -2218,6 +2463,7 @@
         renderBadgeChips();
         renderBadgeSelectOptions();
         renderManageDDayList();
+        updateGeneratedUrl();
         showToast("배지가 삭제되었습니다.");
       }
     }
@@ -2229,6 +2475,7 @@
         saveState();
         renderDDayList();
         renderSettingsView();
+        updateGeneratedUrl();
         showToast("기본 설정으로 초기화되었습니다.");
       }
     }
