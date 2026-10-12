@@ -91,6 +91,7 @@
       padding: 24px 16px;
       -webkit-font-smoothing: antialiased;
       transition: font-size 0.15s ease;
+      touch-action: pan-y pinch-zoom;
     }
 
     .container {

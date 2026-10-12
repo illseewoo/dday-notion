@@ -512,11 +512,12 @@ const STORAGE_KEY = "notion_dday_widget_config_v2";
       }
     }
 
-    /* --- 터치 스와이프 제스처 지원 (오른쪽 -> 왼쪽: 설정 / 왼쪽 -> 오른쪽: 목록) --- */
+    /* --- 터치 스와이프 제스처 지원 (노션 임베드 iframe 최적화) --- */
     let touchStartX = 0;
     let touchStartY = 0;
     let touchStartTime = 0;
     let isTouchIgnored = false;
+    let hasSwipedInThisTouch = false;
 
     document.addEventListener("touchstart", (e) => {
       if (e.touches.length !== 1) return;
@@ -524,6 +525,7 @@ const STORAGE_KEY = "notion_dday_widget_config_v2";
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
       touchStartTime = Date.now();
+      hasSwipedInThisTouch = false;
 
       // 슬라이더, 입력창, 버튼 조작 중에는 스와이프 트리거 제외
       const target = e.target;
@@ -534,27 +536,50 @@ const STORAGE_KEY = "notion_dday_widget_config_v2";
       }
     }, { passive: true });
 
+    // 노션 모바일 앱에서는 iframe의 터치 드래그를 부모 스크롤러가 가로채 touchcancel을 내기 쉬우므로,
+    // 손가락을 떼는 touchend를 기다리지 않고 touchmove 도중 일정 거리(40px) 도달 시 즉각 탭 전환
+    document.addEventListener("touchmove", (e) => {
+      if (isTouchIgnored || hasSwipedInThisTouch || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      if (absX >= 40 && absX > absY * 1.3) {
+        hasSwipedInThisTouch = true;
+        if (deltaX < 0 && currentActiveTab === "dday") {
+          switchTab("settings");
+        } else if (deltaX > 0 && currentActiveTab === "settings") {
+          switchTab("dday");
+        }
+      }
+    }, { passive: true });
+
     document.addEventListener("touchend", (e) => {
-      if (isTouchIgnored || e.changedTouches.length !== 1) return;
+      if (isTouchIgnored || hasSwipedInThisTouch || e.changedTouches.length !== 1) return;
       const touch = e.changedTouches[0];
       const deltaX = touch.clientX - touchStartX;
       const deltaY = touch.clientY - touchStartY;
       const elapsed = Date.now() - touchStartTime;
 
-      // 500ms 이내의 제스처만 인식 (길게 누르기 방지)
-      if (elapsed > 500) return;
-
-      const minDistance = 50; // 최소 이동 거리 (px)
-      // 세로 스크롤과의 혼동을 막기 위해 가로 이동이 세로 이동의 1.5배 이상일 때만 동작
-      if (Math.abs(deltaX) >= minDistance && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
-        if (deltaX < 0 && currentActiveTab === "dday") {
-          // 오른쪽에서 왼쪽으로 스와이프 (<-) : 설정 화면으로
-          switchTab("settings");
-        } else if (deltaX > 0 && currentActiveTab === "settings") {
-          // 왼쪽에서 오른쪽으로 스와이프 (->) : 디데이 목록으로
-          switchTab("dday");
+      if (elapsed <= 500) {
+        const absX = Math.abs(deltaX);
+        const absY = Math.abs(deltaY);
+        if (absX >= 40 && absX > absY * 1.3) {
+          hasSwipedInThisTouch = true;
+          if (deltaX < 0 && currentActiveTab === "dday") {
+            switchTab("settings");
+          } else if (deltaX > 0 && currentActiveTab === "settings") {
+            switchTab("dday");
+          }
         }
       }
+    }, { passive: true });
+
+    document.addEventListener("touchcancel", () => {
+      isTouchIgnored = false;
+      hasSwipedInThisTouch = false;
     }, { passive: true });
 
     /* ==========================================================================
