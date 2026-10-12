@@ -487,9 +487,12 @@ const STORAGE_KEY = "notion_dday_widget_config_v2";
     }
 
     /* ==========================================================================
-       [3. 탭 전환 UX & 상단 더보기 팝업 모달]
+       [3. 탭 전환 UX & 하단 탭 네비게이션]
        ========================================================================== */
+    let currentActiveTab = "dday";
+
     function switchTab(tabName) {
+      currentActiveTab = tabName;
       const ddayView = document.getElementById("view-dday");
       const settingsView = document.getElementById("view-settings");
       const ddayBtn = document.getElementById("tab-btn-dday");
@@ -508,6 +511,51 @@ const STORAGE_KEY = "notion_dday_widget_config_v2";
         renderSettingsView();
       }
     }
+
+    /* --- 터치 스와이프 제스처 지원 (오른쪽 -> 왼쪽: 설정 / 왼쪽 -> 오른쪽: 목록) --- */
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let isTouchIgnored = false;
+
+    document.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchStartTime = Date.now();
+
+      // 슬라이더, 입력창, 버튼 조작 중에는 스와이프 트리거 제외
+      const target = e.target;
+      if (target.closest("input, textarea, select, .slider, .color-palette, .mode-btn, .icon-btn, .more-menu-btn, .nav-modal")) {
+        isTouchIgnored = true;
+      } else {
+        isTouchIgnored = false;
+      }
+    }, { passive: true });
+
+    document.addEventListener("touchend", (e) => {
+      if (isTouchIgnored || e.changedTouches.length !== 1) return;
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      const elapsed = Date.now() - touchStartTime;
+
+      // 500ms 이내의 제스처만 인식 (길게 누르기 방지)
+      if (elapsed > 500) return;
+
+      const minDistance = 50; // 최소 이동 거리 (px)
+      // 세로 스크롤과의 혼동을 막기 위해 가로 이동이 세로 이동의 1.5배 이상일 때만 동작
+      if (Math.abs(deltaX) >= minDistance && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+        if (deltaX < 0 && currentActiveTab === "dday") {
+          // 오른쪽에서 왼쪽으로 스와이프 (<-) : 설정 화면으로
+          switchTab("settings");
+        } else if (deltaX > 0 && currentActiveTab === "settings") {
+          // 왼쪽에서 오른쪽으로 스와이프 (->) : 디데이 목록으로
+          switchTab("dday");
+        }
+      }
+    }, { passive: true });
 
     /* ==========================================================================
        [4. 디데이 및 카운트다운 계산 엔진 (+0 / +1 지원)]
